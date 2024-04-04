@@ -1,12 +1,17 @@
 using Asp.Versioning;
 using BookShop.API.Controllers.Services;
 using BookShop.API.Models;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.Configure<ProductDatabaseSettings>(builder.Configuration.GetSection("ConnectionMongoStock"));
 builder.Services.AddSingleton<StockDBServices>();
+
+//Adding services for Api Middleware
+builder.Services.AddTransient<IApiKeyValidator, ApiKeyValidator>();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services
     .AddApiVersioning(options =>
@@ -24,7 +29,33 @@ builder.Services
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    //adding api key scheme
+    options.AddSecurityDefinition(ApiConstants.ApiKeyName, new OpenApiSecurityScheme()
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter valid Api-Key",
+        Name = ApiConstants.ApiKeyHeader,
+        Type = SecuritySchemeType.ApiKey
+    });
+
+    //adding api key into global security requirement
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = ApiConstants.ApiKeyName
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
@@ -38,6 +69,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseMiddleware<ApiMiddleware>();
 
 app.MapControllers();
 
