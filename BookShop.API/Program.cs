@@ -1,6 +1,11 @@
+using BookShop.API.Controllers.Services;
+using BookShop.API.Models;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.Configure<ProductDatabaseSettings>(builder.Configuration.GetSection("ConnectionMongoStock"));
+builder.Services.AddSingleton<StockDBServices>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
