@@ -1,11 +1,17 @@
-﻿using BookShop.API.Controllers.Services;
+﻿using Asp.Versioning;
+using BookShop.API.Controllers.Services;
 using BookShop.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 
 namespace BookShop.API.Controllers
 {
+    /*
+     * Version for Admin to retrive all data and manipulates with data
+     * Supports all methods: HttpGet, HttpPost, HttpPut and HttpDelete
+     */
     [ApiController]
+    [ApiVersion("1")]
     [Produces("application/json")]
     [Consumes("application/json")]
     public class StockV1Controller(StockDBServices services) : ControllerBase
@@ -66,6 +72,41 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+        #endregion
+    }
+
+    /*supports only HttpGet Methods*/
+    [ApiController]
+    [ApiVersion("2")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
+    public class StockV2Controller(StockDBServices services) : ControllerBase
+    {
+        private readonly StockDBServices _services = services;
+
+        #region of HttpGet Methods
+        #region of simple HttpGet Methods
+        /*!ATTENTION! may be overflow error, or slowdown preformance.Depends on current size of database
+         * returns all data from database collection
+        */
+        [HttpGet, Route("books/all")]
+        public async Task<ActionResult<List<Product>>> GetAllProducts()
+        {
+            try
+            {
+                var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable).ToList();
+
+                return products is null || products.Count == 0 ?
+                    NotFound() : Ok(products);
+            }
+            catch (Exception ex)
+            {
+                return Problem(ex.Message);
+            }
+        }
+
+
+        #endregion
         #endregion
     }
 }
