@@ -112,6 +112,10 @@ namespace BookShop.API.Controllers
             {
                 var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable).ToList();
 
+                if(products is null)
+                {
+                    LoggInfo(NotFound().StatusCode, "No data in database found with specified requerments");
+                }
                 return products is null || products.Count == 0 ?
                     NotFound() : Ok(products);
             }
