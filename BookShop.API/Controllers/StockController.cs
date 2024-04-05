@@ -14,9 +14,10 @@ namespace BookShop.API.Controllers
     [ApiVersion("1")]
     [Produces("application/json")]
     [Consumes("application/json")]
-    public class StockV1Controller(StockDBServices services) : ControllerBase
+    public class StockV1Controller(StockDBServices services, ILogger<StockV1Controller> logger) : ControllerBase
     {
         private readonly StockDBServices _services = services;
+        private readonly ILogger<StockV1Controller> _logger = logger;
 
         #region of HttpGet Methods
         #region of simple HttpGet Methods
@@ -35,6 +36,7 @@ namespace BookShop.API.Controllers
             }
             catch (Exception ex)
             {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
                 return Problem(ex.Message);
             }
         }
@@ -65,12 +67,25 @@ namespace BookShop.API.Controllers
                     Price = product.Price > 0 ? product.Price : 0
                 };
                 await _services.AddNewAsync(book);
+
+                LoggInfo(Ok().StatusCode, "Successfully added product, with id: '" + book.Id + "'. ");
                 return Ok("Successfully added: " + book.ToJson());
             }
             catch (Exception ex)
             {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
                 return Problem(ex.Message);
             }
+        }
+        #endregion
+        #region of Help Methods
+        private void LoggError(string errorMessage, string errorStackTrace )
+        {
+            _logger.LogError(message: errorMessage, args: errorStackTrace);
+        }
+        private void LoggInfo(int statusCode, string message)
+        {
+            _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
         }
         #endregion
     }
@@ -80,9 +95,10 @@ namespace BookShop.API.Controllers
     [ApiVersion("2")]
     [Produces("application/json")]
     [Consumes("application/json")]
-    public class StockV2Controller(StockDBServices services) : ControllerBase
+    public class StockV2Controller(StockDBServices services, ILogger<StockV2Controller> logger) : ControllerBase
     {
         private readonly StockDBServices _services = services;
+        private readonly ILogger<StockV2Controller> _logger = logger;
 
         #region of HttpGet Methods
         #region of simple HttpGet Methods
@@ -101,12 +117,24 @@ namespace BookShop.API.Controllers
             }
             catch (Exception ex)
             {
+                LoggError(ex.Message, ex.StackTrace!);
                 return Problem(ex.Message);
             }
         }
 
 
         #endregion
+        #endregion
+
+        #region of Help Methods
+        private void LoggError(string errorMessage, string errorStackTrace)
+        {
+            _logger.LogError(message: errorMessage, args: errorStackTrace);
+        }
+        private void LoggInfo(int statusCode, string message)
+        {
+            _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        }
         #endregion
     }
 }
