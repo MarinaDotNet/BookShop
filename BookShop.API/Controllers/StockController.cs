@@ -41,6 +41,27 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //returns list of requested quantity of products for requested page
+        //list sorted in requested order, by requested parameter(by Title or by Author or by Price)
+        //if not specified sorting order && parameter for order, then its uses default parameters:
+        //descending order by Price
+        [HttpGet, Route("books/page")]
+        public async Task<ActionResult<List<Product>>> GetPerPageProducts([FromQuery] PageModel model)
+        {
+            try
+            {
+                Query query = new(model.RequestedPage, model.QuantityPerPage, (int)GetQuantityAllProducts().Result);
+                var products = (await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy)).Skip(query.QuantityToSkip).Take(query.RequestedQuantity);
+
+                return products is null || !products.Any() ?
+                    NotFound("There no products found under entered requirements") : Ok(products);
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
 
         #endregion
         #endregion
@@ -87,10 +108,31 @@ namespace BookShop.API.Controllers
         {
             _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
         }
+
+        #region of count methods
+        //returns quantity of all products in database
+        [HttpGet, Route("books/count/all")]
+        public async Task<int> GetQuantityAllProducts()
+        {
+            try
+            {
+                int quantity = (await _services.GetAllBooksAsync()).Count;
+                return quantity;
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return 0;
+            }
+        }
+        #endregion
         #endregion
     }
 
-    /*supports only HttpGet Methods*/
+    /*
+     * Version for Users to only retrive some data from database, where property 'available' == true
+     * Supports only methods: HttpGet
+     */
     [ApiController]
     [ApiVersion("2")]
     [Produces("application/json")]
@@ -126,6 +168,29 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //returns list of requested quantity of products.isAvailable for requested page
+        //list sorted in requested order, by requested parameter(by Title or by Author or by Price)
+        //if not specified sorting order && parameter for order, then its uses default parameters:
+        //descending order by Price
+        [HttpGet, Route("books/page")]
+        public async Task<ActionResult<List<Product>>> GetPerPageProducts([FromQuery] PageModel model)
+        {
+            try
+            {
+                Query query = new(model.RequestedPage, model.QuantityPerPage, (int)GetQuantityAllProducts().Result);
+                var products = (await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy))
+                    .Where(_ => _.IsAvailable)
+                    .Skip(query.QuantityToSkip).Take(query.RequestedQuantity);
+
+                return products is null || !products.Any() ?
+                    NotFound("There no products found under entered requirements") : Ok(products);
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
 
         #endregion
         #endregion
@@ -139,6 +204,24 @@ namespace BookShop.API.Controllers
         {
             _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
         }
+
+        #region of count methods
+        //returns quantity of all products.isAvailable in database
+        [HttpGet, Route("books/count/all")]
+        public async Task<int> GetQuantityAllProducts()
+        {
+            try
+            {
+                int quantity = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable).ToList().Count;
+                return quantity;
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return 0;
+            }
+        }
+        #endregion
         #endregion
     }
 }
