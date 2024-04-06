@@ -141,22 +141,61 @@ namespace BookShop.API.Controllers.Services
             await _collection.Find(_ => _.Id!.Equals(id)).FirstOrDefaultAsync();
 
         //returns list of books where Title,Author, Language or one of item from array of Genres EQUALS to searchCondition
-        public async Task<List<Product>> GetBooksEqualsConditionAsync(string condition) =>
-            await _collection.Find(_ => 
-            _.Author!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-            _.Title!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-            _.Language!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-            _.Genres!.ToArray().Any(genre => genre.Equals(condition, StringComparison.OrdinalIgnoreCase))
-            ).ToListAsync();
+        //sorts list
+        public async Task<List<Product>> GetBooksEqualsConditionAsync(string condition, bool ascending, string orderParameter)
+        {
+           var products = await _collection.Find(_ =>
+                _.Author!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
+                _.Title!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
+                _.Language!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
+                _.Genres!.ToArray().Any(genre => genre.Equals(condition, StringComparison.OrdinalIgnoreCase))
+                ).ToListAsync();
+
+            return orderParameter.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                ascending ?
+                [.. products.OrderBy(_ => _.Author)] : [.. products.OrderByDescending(_ => _.Author)] :
+                orderParameter.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                ascending ?
+                [.. products.OrderBy(_ => _.Title)] : [.. products.OrderByDescending(_ => _.Title)] :
+                ascending ? [.. products.OrderBy(_ => _.Price)] : [.. products.OrderByDescending(_ => _.Price)];
+        }
+
 
         //returns list of books where Title,Author, Language or one of item from array of genres CONTAINS to searchCondition
-        public async Task<List<Product>> GetBooksContainsConditionAsync(string condition) =>
-            await _collection.Find(_ =>
-            _.Author!.ToUpper().Contains(condition.ToUpper()) ||
-            _.Title!.ToUpper().Contains(condition.ToUpper()) ||
-            _.Language!.ToUpper().Contains(condition.ToUpper()) ||
-            _.Genres!.ToArray().Any(genre => genre.ToUpper().Contains(condition.ToUpper()))
-            ).ToListAsync();
+        //sorts list
+        public async Task<List<Product>> GetBooksContainsConditionAsync(string condition, bool ascending, string orderParameter)
+        {
+            var products = await _collection.Find(_ =>
+                _.Author!.ToUpper().Contains(condition.ToUpper()) ||
+                _.Title!.ToUpper().Contains(condition.ToUpper()) ||
+                _.Language!.ToUpper().Contains(condition.ToUpper()) ||
+                _.Genres!.ToArray().Any(genre => genre.ToUpper().Contains(condition.ToUpper()))
+                ).ToListAsync();
+
+            return orderParameter.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                ascending ? 
+                [.. products.OrderBy(_ => _.Author)] : [.. products.OrderByDescending(_ => _.Author)] :
+                orderParameter.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                ascending ?
+                [.. products.OrderBy(_ => _.Title)] : [.. products.OrderByDescending(_ => _.Title)] :
+                ascending ? [.. products.OrderBy(_ => _.Price)] : [.. products.OrderByDescending(_ => _.Price)];
+        }
+
+        //returns list of all products by Order
+        public async Task<List<Product>> GetBooksInOrder(bool ascending, string orderParameter)
+        {
+            return orderParameter.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                ascending ?
+                await _collection.Find(_ => true).SortBy(_ => _.Author).ToListAsync() :
+                await _collection.Find(_ => true).SortByDescending(_ => _.Author).ToListAsync() :
+                orderParameter.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                ascending ?
+                await _collection.Find(_ => true).SortBy(_ => _.Title).ToListAsync() :
+                await _collection.Find(_ => true).SortByDescending(_ => _.Title).ToListAsync() :
+                ascending ?
+                await _collection.Find(_ => true).SortBy(_ => _.Price).ToListAsync() :
+                await _collection.Find(_ => true).SortByDescending(_ => _.Price).ToListAsync();
+        }
         #endregion
         #region of manipulations with data from DB Collection
         public async Task AddNewAsync(Product product) =>
