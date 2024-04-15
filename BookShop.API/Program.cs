@@ -131,12 +131,20 @@ builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Confi
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
+//ensuring that database created
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<AuthenticationApiDbContext>();
+    context.Database.EnsureCreated();
+}
 app.UseHttpsRedirection();
 
 app.UseSerilogRequestLogging();
