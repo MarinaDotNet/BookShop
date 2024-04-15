@@ -37,7 +37,7 @@ builder.Services.AddControllers();
 
 //Entity Framework
 builder.Services.AddDbContext<AuthenticationApiDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("AzureSQLConnection"), builder =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionToSQL"), builder =>
     builder.EnableRetryOnFailure(maxRetryCount: 10, maxRetryDelay: TimeSpan.FromSeconds(30), errorNumbersToAdd: null)));
 
 //Add  Identity
