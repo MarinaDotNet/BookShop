@@ -20,6 +20,25 @@ builder.Services.AddSingleton<StockDBServices>();
 builder.Services.AddTransient<IApiKeyValidator, ApiKeyValidator>();
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("MyPolicyForAdmin", policy =>
+    {
+        policy
+        .WithHeaders([ApiConstants.ApiVersionHeader + " : 1"])
+        .AllowAnyMethod()
+        .DisallowCredentials()
+        .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
+    });
+    options.AddPolicy("MyPolicyForUser", policy =>
+    {
+        policy
+        .WithHeaders([ApiConstants.ApiVersionHeader + " : 2"])
+        .AllowAnyMethod()
+        .DisallowCredentials()
+        .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
+    });
+});
 builder.Services
     .AddApiVersioning(options =>
     {
@@ -148,6 +167,8 @@ using (var scope = app.Services.CreateScope())
 app.UseHttpsRedirection();
 
 app.UseSerilogRequestLogging();
+
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
