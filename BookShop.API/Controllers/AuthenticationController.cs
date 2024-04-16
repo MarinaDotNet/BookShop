@@ -4,7 +4,9 @@ using BookShop.API.Models.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
 using System.Security.Claims;
 using System.Text;
 
@@ -38,8 +40,7 @@ namespace BookShop.API.Controllers
 
                     if(!userRoles.Contains(ApiConstants.Admin))
                     {
-                        LogingWarning((@"Unauthorized access rejected for: {@user}, at {@DateTime}", user, DateTime.Now).ToString());
-                        return Unauthorized("Access denied for user: '" + user.UserName + "', current user does not have authority");
+                        return Warning("Access denied for user: '" + user.UserName + "', current user does not have authority", (int)HttpStatusCode.Unauthorized);
                     }
 
                     List<Claim> authorizationClaims =
@@ -70,8 +71,7 @@ namespace BookShop.API.Controllers
                     });
                 }
 
-                LogingInformation((@"Unauthorized access rejected for: {@user}, at {@DateTime}", user, DateTime.Now).ToString());
-                return Unauthorized(user is null ? "Not registrated user:'" + model.UserLogin + "'." : "Entered incorrect password");
+                return Warning(user is null ? "Not registrated user:'" + model.UserLogin + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
             }
             catch (Exception ex)
             {
@@ -90,13 +90,11 @@ namespace BookShop.API.Controllers
 
                 if(emailExists is not null || userNameExists is not null)
                 {
-                    string message = emailExists is not null && userNameExists is not null ?
+                    return Warning(emailExists is not null && userNameExists is not null ?
                         "User with this email and login already registrated" :
                         emailExists is not null ?
                         "User with this email already registrated" :
-                        "User with this login already registrated";
-                    LogingWarning(message);
-                    return Problem(message);
+                        "User with this login already registrated");
                 }
 
                 ApiUser user = new()
@@ -110,9 +108,7 @@ namespace BookShop.API.Controllers
                 
                 if (!result.Succeeded)
                 {
-                    string message = (@"Unable registrate user with entered details: {@user} at {@DateTime}. Please check entered details.", user, DateTime.Now).ToString();
-                    LogingWarning(message);
-                    return Problem(message);
+                    return Warning("Unable registrate user with entered details: " + user + "at " + DateTime.Now + ". Please check entered details.");
                 }
 
                 if(!await _roleManager.RoleExistsAsync(ApiConstants.Admin))
@@ -132,7 +128,7 @@ namespace BookShop.API.Controllers
                 string roles = "";
                 (await _userManager.GetRolesAsync(user)).ToList().ForEach(x => roles += x + " ");
 
-                LogingInformation((@"Registrated Successfully: {@apiUser}, with roles: {@roles}, at {@DateTime}", user, roles, DateTime.Now).ToString());
+                LogingInformation("Registrated Successfully:" + user + ", with roles:" + roles + ", at " + DateTime.Now);
 
                 return Ok(new
                 {
@@ -147,6 +143,55 @@ namespace BookShop.API.Controllers
                 LogingError(ex);
                 return Problem(ex.Message);
             }
+        }
+
+        [HttpPut, Route("password-change")]
+        public async Task<ActionResult> PasswordUpdate([FromForm]PasswordChangeModel model)
+        {
+            try
+            {
+                var userExists = await _userManager.FindByEmailAsync(model.Email);
+                if (userExists is null)
+                { 
+                    return Warning("User with this email is not registrated", 0);
+                }
+
+                if(!await _userManager.CheckPasswordAsync(userExists, model.CurrentPassword))
+                {
+                    return Warning("Entered Current password is not correct", 0);
+                }
+                if(!model.NewPassword.Equals(model.ConfirmPassword) || 
+                    model.NewPassword.Equals(model.CurrentPassword))
+                {
+                    return Warning(model.NewPassword.Equals(model.ConfirmPassword) ? 
+                        "The new password and confirmation password do not match" :
+                        "Entered New Password can not be used, please, try another", 0);
+                }
+
+                var result = await _userManager.ChangePasswordAsync(userExists, model.CurrentPassword, model.NewPassword);
+
+                if (!result.Succeeded)
+                {
+                    return Warning("Unable to change password for" + userExists.UserName + ", operation declined at" + DateTime.Now + ". Please check entered details.", 0);
+                }
+
+                LogingInformation("Password changed Successfully:" + userExists.UserName + ", at " + DateTime.Now);
+
+                return Ok("Password changed Successfully");
+            }
+            catch (Exception ex)
+            {
+                LogingError(ex);
+                return Problem(ex.Message);
+            }
+        }
+
+        private ActionResult Warning(string message, int statusCode)
+        {
+            LogingWarning(message);
+            return statusCode == (int)HttpStatusCode.Unauthorized ? 
+                Unauthorized(message) :
+                Problem(message);
         }
     }
 
