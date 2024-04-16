@@ -6,6 +6,17 @@ using System.Net;
  * Checks if valid ApiKey specified in request header and 
  * Checks if supported ApiVersion specified in request header
  **/
+
+/*
+ * TODO: Add error for 
+ * context.GetEndpoint().DisplayName ==
+ * BookShop.API.Controllers.AuthenticationV1Controller.PasswordUpdate(BookShop.API) and
+ * context.GetEndpoint().DisplayName ==
+ * BookShop.API.Controllers.AuthenticationV2Controller.PasswordUpdate(BookShop.API)
+ * if user not 
+ * Signed in(maybe can use context.User.Identity for it or context.Request.Headers.Authorization)
+ * 
+ * */
 namespace BookShop.API.Controllers.Services
 {
     public class ApiMiddleware(RequestDelegate request, IApiKeyValidator validator, ILogger<ApiMiddleware> logger)
