@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace BookShop.API.Models.Authentication
 {
-    public class PasswordChangeModel
+    public class PasswordResetForAccountModel
     {
         [Required(AllowEmptyStrings = false, ErrorMessage = "User Email required")]
         [EmailAddress]
