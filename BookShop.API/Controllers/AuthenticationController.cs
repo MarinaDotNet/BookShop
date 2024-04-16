@@ -250,6 +250,52 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        [EnableCors(PolicyName = "MyPolicyForAdmin")]
+        [Authorize]
+        [HttpDelete, Route("account/delete")]
+        public async Task<ActionResult> RemoveUser([FromForm]DeleteModel model)
+        {
+            try
+            {
+                if(!model.ConfirmDelete)
+                {
+                    return BadRequest("Canceled by User");
+                }
+                HttpContextAccessor accessor = new();
+                if(string.IsNullOrEmpty(accessor.HttpContext!.Request.Headers.Authorization))
+                {
+                    return Warning("To Delete account, requires to sign in account", (int)HttpStatusCode.Unauthorized);
+                }
+
+                ApiUser? user = await _userManager.FindByNameAsync(accessor.HttpContext.User.Identity!.Name!);
+
+                if(user is null)
+                {
+                    return Warning("Unable to delete account. Please check entered details.", 0);
+                }
+
+                if(!await _userManager.CheckPasswordAsync(user, model.Password))
+                {
+                    return Warning("Entered wrong password", (int)HttpStatusCode.Unauthorized);
+                }
+
+                var result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                {
+                    return Warning("Unable to delete account: " + user.UserName + ", operation declined at" + DateTime.Now, (int)HttpStatusCode.Forbidden);
+                }
+
+                LogingInformation("Account deleted:" + user.Email + ", at " + DateTime.Now);
+
+                return Ok("Account Deleted");
+            }
+            catch(Exception ex)
+            {
+                LogingError(ex);
+                return Problem(ex.Message);
+            }
+        }
     }
 
     [ApiController]
@@ -427,6 +473,52 @@ namespace BookShop.API.Controllers
                 LogingInformation("Password changed Successfully:" + user.UserName + ", at " + DateTime.Now);
 
                 return Ok("Password changed Successfully");
+            }
+            catch (Exception ex)
+            {
+                LogingError(ex);
+                return Problem(ex.Message);
+            }
+        }
+
+        [EnableCors(PolicyName = "MyPolicyForUser")]
+        [Authorize]
+        [HttpDelete, Route("account/delete")]
+        public async Task<ActionResult> RemoveUser([FromForm] DeleteModel model)
+        {
+            try
+            {
+                if (!model.ConfirmDelete)
+                {
+                    return BadRequest("Canceled by User");
+                }
+                HttpContextAccessor accessor = new();
+                if (string.IsNullOrEmpty(accessor.HttpContext!.Request.Headers.Authorization))
+                {
+                    return Warning("To Delete account, requires to sign in account", (int)HttpStatusCode.Unauthorized);
+                }
+
+                ApiUser? user = await _userManager.FindByNameAsync(accessor.HttpContext.User.Identity!.Name!);
+
+                if (user is null)
+                {
+                    return Warning("Unable to delete account. Please check entered details.", 0);
+                }
+
+                if (!await _userManager.CheckPasswordAsync(user, model.Password))
+                {
+                    return Warning("Entered wrong password", (int)HttpStatusCode.Unauthorized);
+                }
+
+                var result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                {
+                    return Warning("Unable to delete account: " + user.UserName + ", operation declined at" + DateTime.Now, (int)HttpStatusCode.Forbidden);
+                }
+
+                LogingInformation("Account deleted:" + user.Email + ", at " + DateTime.Now);
+
+                return Ok("Account Deleted");
             }
             catch (Exception ex)
             {
