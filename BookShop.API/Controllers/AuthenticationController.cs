@@ -26,6 +26,13 @@ namespace BookShop.API.Controllers
         private void LogingError(Exception error) => _logger.LogError(message: error.Message, args: error.StackTrace);
         private void LogingInformation(string message) => _logger.LogInformation(message: message);
         private void LogingWarning(string message) => _logger.LogWarning(message: message);
+        private ActionResult Warning(string message, int statusCode)
+        {
+            LogingWarning(message);
+            return statusCode == (int)HttpStatusCode.Unauthorized ?
+                Unauthorized(message) :
+                Problem(message);
+        }
         #endregion
 
         [HttpPost, Route("loging")]
@@ -186,13 +193,7 @@ namespace BookShop.API.Controllers
             }
         }
 
-        private ActionResult Warning(string message, int statusCode)
-        {
-            LogingWarning(message);
-            return statusCode == (int)HttpStatusCode.Unauthorized ? 
-                Unauthorized(message) :
-                Problem(message);
-        }
+        
     }
 
 }
