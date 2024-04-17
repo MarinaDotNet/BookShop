@@ -203,7 +203,7 @@ namespace BookShop.API.Controllers
         }
 
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
-        [Authorize]
+        [Authorize(Roles = ApiConstants.Admin)]
         [HttpPut, Route("password/reset")]
         public async Task<ActionResult> PasswordUpdateCurrentUser([FromForm] PasswordResetModel model)
         {
@@ -252,7 +252,7 @@ namespace BookShop.API.Controllers
         }
 
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
-        [Authorize]
+        [Authorize(Roles = ApiConstants.Admin)]
         [HttpDelete, Route("account/delete")]
         public async Task<ActionResult> RemoveUser([FromForm]DeleteModel model)
         {
@@ -276,6 +276,47 @@ namespace BookShop.API.Controllers
                 }
 
                 if(!await _userManager.CheckPasswordAsync(user, model.Password))
+                {
+                    return Warning("Entered wrong password", (int)HttpStatusCode.Unauthorized);
+                }
+
+                var result = await _userManager.DeleteAsync(user);
+                if (!result.Succeeded)
+                {
+                    return Warning("Unable to delete account: " + user.UserName + ", operation declined at" + DateTime.Now, (int)HttpStatusCode.Forbidden);
+                }
+
+                LogingInformation("Account deleted:" + user.Email + ", at " + DateTime.Now);
+
+                return Ok("Account Deleted");
+            }
+            catch(Exception ex)
+            {
+                LogingError(ex);
+                return Problem(ex.Message);
+            }
+        }
+
+        [EnableCors(PolicyName = "MyPolicyForAdmin")]
+        [Authorize(Roles = ApiConstants.Admin)]
+        [HttpDelete, Route("account/delete/anotheruser")]
+        public async Task<ActionResult> DeleteAccount([FromForm]DeleteAccountModel model)
+        {
+            try
+            {
+                if (!model.ConfirmDelete)
+                {
+                    return BadRequest("Canceled by User");
+                }
+
+                ApiUser? user = await _userManager.FindByEmailAsync(model.AccountEmail);
+
+                if (user is null)
+                {
+                    return Warning("Unable to process request. Account with provided details was not found.", (int)HttpStatusCode.NotFound);
+                }
+
+                if (!await _userManager.CheckPasswordAsync(user, model.Password))
                 {
                     return Warning("Entered wrong password", (int)HttpStatusCode.Unauthorized);
                 }
