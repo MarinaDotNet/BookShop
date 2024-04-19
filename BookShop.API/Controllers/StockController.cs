@@ -3,6 +3,7 @@ using BookShop.API.Controllers.Services;
 using BookShop.API.Models;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
+using System.ComponentModel.DataAnnotations;
 
 namespace BookShop.API.Controllers
 {
@@ -57,6 +58,23 @@ namespace BookShop.API.Controllers
                     NotFound("There no products found under entered requirements") : Ok(products);
             }
             catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+
+        [HttpGet, Route("book/id")]
+        public async Task<ActionResult<Product>> GetProductById([FromQuery][StringLength(20)] string id)
+        {
+            try
+            {
+                var product = await _services.GetBookByIdAsync(id);
+                return product is null ?
+                    NotFound("There no product found under entered requirements") : 
+                    Ok(product);
+            }
+            catch(Exception ex)
             {
                 LoggError(ex.Message.ToString(), ex.StackTrace!);
                 return Problem(ex.Message);
@@ -192,6 +210,23 @@ namespace BookShop.API.Controllers
             }
         }
 
+
+        [HttpGet, Route("book/id")]
+        public async Task<ActionResult<Product>> GetProductById([FromQuery][StringLength(20)] string id)
+        {
+            try
+            {
+                var product = (await _services.GetBookByIdAsync(id));
+                return product is null || !product.IsAvailable ?
+                    NotFound("There no product found under entered requirements") :
+                    Ok(product);
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
 
