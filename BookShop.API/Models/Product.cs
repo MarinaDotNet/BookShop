@@ -1,6 +1,7 @@
 ﻿/*
  * Entity Model class for Monogo database Books Collection
  */
+using Microsoft.EntityFrameworkCore;
 using MongoDB.Bson.Serialization.Attributes;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -38,6 +39,7 @@ namespace BookShop.API.Models
         [BsonElement("price")]
         [Range(0, int.MaxValue)]
         [BsonRepresentation(MongoDB.Bson.BsonType.Decimal128)]
+        [Precision(18, 2)]
         public decimal Price { get; set; } = 0;
     }
 }
