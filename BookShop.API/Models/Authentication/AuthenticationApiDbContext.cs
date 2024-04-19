@@ -8,6 +8,11 @@ namespace BookShop.API.Models.Authentication
     {
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            builder.Entity<ApiUser>()
+                .HasMany(user => user.Orders)
+                .WithOne(order => order.User)
+                .HasForeignKey(order => order.UserId);
+
             string adminId = Guid.NewGuid().ToString();
             string userId = Guid.NewGuid().ToString();
             string roleAdminId = Guid.NewGuid().ToString();
@@ -64,7 +69,14 @@ namespace BookShop.API.Models.Authentication
                     UserId = userId
                 });
 
+            builder.Entity<Order>(b =>
+            {
+                b.ToTable("Orders");
+            });
+
             base.OnModelCreating(builder);
         }
+
+        public DbSet<Order> Orders { get; set; }
     }
 }
