@@ -220,7 +220,9 @@ namespace BookShop.API.Controllers
                         {
                             if(order.ProductsId!.Contains(id))
                             {
+                                decimal price = (await _stockServices.GetBookByIdAsync(id)).Price;
                                 order.ProductsId.Remove(id);
+                                order.TotalPrice -= price;
                             }
                         }
                         order.OrderDateTime = DateTime.Now;
@@ -255,6 +257,104 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
-            
+
+        //Submitts orders
+        //Checks if there all products still available in stock before submmiting.
+        //If some products is not available, then deletes it from order, recounting total price and
+        //informing the user about this and that the order needs to be double-checked and resubmit it
+        [HttpPut, Route("/order/submit")]
+        public async Task<ActionResult> PutOrderAsSubmitted([FromForm][Required]string orderId)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                string message = "";
+                if (user is not null)
+                {
+                    Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
+
+                    //Checks if order with requested id exists and is not submitted yet
+                    if (order is not null && !order.SubmittedOrder)
+                    {
+                        //Checks if all products in order exists and available
+                        if(order.ProductsId!.Any())
+                        {
+                            string idsDeleted = "";
+                            List<string> productsIds = order.ProductsId!.ToList();
+                            List<string> productsIdNotAvailable = new();
+                            foreach (string productId in productsIds)
+                            {
+                                Product product = await _stockServices.GetBookByIdAsync(productId);
+                                if(product is null || !product.IsAvailable)
+                                {
+                                    idsDeleted += productId + ", ";
+                                    productsIdNotAvailable.Add(productId);
+                                    order.ProductsId!.Remove(productId);
+                                }
+                            }
+                            //Recounts total price for order if there was removed any not in stock products
+                            if(productsIdNotAvailable.Any())
+                            {
+                                decimal totalPrice = 0;
+                                foreach (string producId in productsIds)
+                                {
+                                    Product product = await _stockServices.GetBookByIdAsync(producId);
+                                    totalPrice = product is not null && product.IsAvailable ?
+                                        totalPrice + product.Price : totalPrice + 0;
+                                }
+                                order.TotalPrice = totalPrice;
+                            }
+                            //Resetting order 
+                            order.SubmittedOrder = !productsIdNotAvailable.Any();
+                            order.OrderDateTime = DateTime.Now;
+                            _dbContext.Orders.Update(order);
+
+                            var result = await _dbContext.SaveChangesAsync();
+
+                            //Checks the result 
+                            if(result == 0)
+                            {
+                                LogingWarning("Unable to process request. Order was not saved, OrderID" + order.OrderId);
+                                return BadRequest("Not able to process your request. Order was not saved.");
+                            }
+                            else
+                            {
+                                //if there was deleted any products from Order, needs user to recheck what is
+                                //in it before submitting
+                                if (!order.SubmittedOrder)
+                                {
+                                    message = "The product/products with id: " + idsDeleted + ", was not found or        currently unavailable. Those products was removed from your order. Order was not subbmitted. Please recheck the order and resubmit it again.";
+                                    return Warning(message, (int)HttpStatusCode.NotFound);
+                                }
+                                else
+                                {
+                                    return Successfull("Order with id: " + order.OrderId + ", submitted successfully, at: " + order.OrderDateTime);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            return Warning("Can not submit empty Order, Order should have at list one product. Request declined at: " + DateTime.Now, (int)HttpStatusCode.BadRequest);
+                        }
+                    }
+                    else
+                    {
+                        message = "Sorry, the requested order, with id: " + orderId;
+                        message += order is not null ?
+                         ", already submitted." :
+                         ", was not found.";
+                        return Warning(message + "Request declined at: " + DateTime.Now, (int)HttpStatusCode.BadRequest);
+                    }
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
     }
 }
