@@ -200,5 +200,61 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
+
+        //Deletes products from existing order for the current authorized user
+        [HttpPut, Route("/order/products/delete")]
+        public async Task<ActionResult> PutOrderDeleteProducts([FromForm][Required]List<string> productIds, [Required]string orderId)
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                string message = "";
+                if (user is not null)
+                {
+                    Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
+
+                    //Checks if order with requested id exists and is not submitted yet
+                    if (order is not null && !order.SubmittedOrder)
+                    {
+                        foreach(string id in productIds)
+                        {
+                            if(order.ProductsId!.Contains(id))
+                            {
+                                order.ProductsId.Remove(id);
+                            }
+                        }
+                        order.OrderDateTime = DateTime.Now;
+                        _dbContext.Orders.Update(order);
+                        var result = await _dbContext.SaveChangesAsync();
+
+                        string info = "OrderID: " + order.OrderId + ".For UserID: " + user.Id + "at DateTime: " + order.OrderDateTime;
+
+                        if (result == 0)
+                        {
+                            return Warning("Unable to process request. Products was not removed " +
+                                info, (int)HttpStatusCode.BadRequest);
+                        }
+                        else return Successfull("Products removed successfully, " + info);
+                    }
+                    else
+                    {
+                        message = "Sorry, the requested order, with id: " + orderId;
+                        message += order is not null ?
+                         ", already submitted. Please start new order." :
+                         ", was not found. Please start new order.";
+                        return Warning(message + "Request declined at: " + DateTime.Now, (int)HttpStatusCode.BadRequest);
+                    }
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+            
     }
 }
