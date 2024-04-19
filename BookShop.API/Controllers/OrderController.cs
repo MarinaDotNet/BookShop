@@ -34,6 +34,11 @@ namespace BookShop.API.Controllers
         }
         #endregion
 
+        //Creates new order, if there is not unsubmitted orders, for the current user,
+        //else returns Problem() object result with information message that contains
+        //id for unsubmitted order.
+        //User, should add new products to last not submitted order and submit it,
+        //before to start another new order.
         [HttpPost, Route("/order")]
         public async Task<ActionResult> PostOrder([FromForm]List<string> productsIds)
         {
