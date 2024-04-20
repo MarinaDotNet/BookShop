@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 
 namespace BookShop.API.Controllers
 {
@@ -69,7 +70,7 @@ namespace BookShop.API.Controllers
         }
 
         [HttpGet, Route("book/id")]
-        public async Task<ActionResult<Product>> GetProductById([FromQuery]/*[StringLength(20)]*/ string id)
+        public async Task<ActionResult<Product>> GetProductById([FromQuery]string id)
         {
             try
             {
@@ -122,13 +123,25 @@ namespace BookShop.API.Controllers
         }
         #endregion
         #region of Help Methods
-        private void LoggError(string errorMessage, string errorStackTrace )
+        private ActionResult LoggError(string errorMessage, string errorStackTrace )
         {
             _logger.LogError(message: errorMessage, args: errorStackTrace);
+            return Problem(errorMessage.ToJson());
         }
-        private void LoggInfo(int statusCode, string message)
-        {
+        private void LoggInfo(int statusCode, string message)=>
             _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private void LogingWarning(int statusCode, string message) => 
+            _logger.LogWarning(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private ActionResult Warning(string message, int statusCode)
+        {
+            LogingWarning(statusCode, message);
+            return statusCode == (int)HttpStatusCode.Unauthorized ?
+                Unauthorized(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.NotFound ?
+                NotFound(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.BadRequest ?
+                BadRequest(message.ToJson()) :
+                Problem(message.ToJson());
         }
 
         #region of count methods
@@ -237,13 +250,25 @@ namespace BookShop.API.Controllers
         #endregion
 
         #region of Help Methods
-        private void LoggError(string errorMessage, string errorStackTrace)
+        private ActionResult LoggError(string errorMessage, string errorStackTrace)
         {
             _logger.LogError(message: errorMessage, args: errorStackTrace);
+            return Problem(errorMessage.ToJson());
         }
-        private void LoggInfo(int statusCode, string message)
-        {
+        private void LoggInfo(int statusCode, string message) =>
             _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private void LogingWarning(int statusCode, string message) =>
+            _logger.LogWarning(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private ActionResult Warning(string message, int statusCode)
+        {
+            LogingWarning(statusCode, message);
+            return statusCode == (int)HttpStatusCode.Unauthorized ?
+                Unauthorized(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.NotFound ?
+                NotFound(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.BadRequest ?
+                BadRequest(message.ToJson()) :
+                Problem(message.ToJson());
         }
 
         #region of count methods
