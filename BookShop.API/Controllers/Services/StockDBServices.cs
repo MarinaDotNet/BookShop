@@ -205,7 +205,7 @@ namespace BookShop.API.Controllers.Services
             await _collection.FindOneAndReplaceAsync(book => book.Id!.Equals(product.Id), product);
 
         public async Task DeleteOneAsync(string id) =>
-            await _collection.DeleteOneAsync(id);
+            await _collection.FindOneAndDeleteAsync(book => book.Id!.Equals(id));
         #endregion
     }
 }
