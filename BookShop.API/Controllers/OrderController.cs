@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.IdGenerators;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
@@ -62,6 +64,26 @@ namespace BookShop.API.Controllers
                 return string.Empty;
             }
         }
+
+        private string MessageUnavailableProducts(List<string>productsIdsNotFound, bool orderIsSubmitted)
+        {
+            string message = "";
+            if(productsIdsNotFound.Any())
+            {
+                message += "Some product from your order, currently unavailable in stock.";
+                message += orderIsSubmitted ?
+                    "There no detailed data can be displayed for products with IDs: " :
+                    "Total Order price recounted and products was removed from your Order." +
+                    "Removed Products IDs: ";
+                int index = productsIdsNotFound.Count;
+                foreach (string id in productsIdsNotFound)
+                {
+                    --index;
+                    message += index != 0 ? id + ", " : id + ".";
+                }
+            }
+            return message;   
+        }
         #endregion
 
         //Creates new order, if there is not unsubmitted orders, for the current authorized user,
@@ -70,20 +92,23 @@ namespace BookShop.API.Controllers
         //User, should add new products to last not submitted order and submit it,
         //before to start another new order.
         [HttpPost, Route("/order")]
-        public async Task<ActionResult> PostOrder([FromForm]List<string> productsIds)
+        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromForm]List<string> productsIds)
         {
             try
             {
+                string message = "";
                 //checks if user is signed in to create order
                 var user = await _userManager.FindByNameAsync(GetCurrentUserName());
                 if (user is not null)
-                {                    
+                {
                     var listOfOrders = await _dbContext.Orders.Where(_ => _.UserId.Equals(user!.Id)).ToListAsync();
                     //checks if user has an uncompleted orders before to create new order
-                    if(listOfOrders.Any(_ => !_.SubmittedOrder))
+                    if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
-                        return Warning("Please finish previous order with id: " +
-                            listOfOrders.Find(_ => !_.SubmittedOrder)!.OrderId, 0);
+                        Order ? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
+                        message = "Please submit order above before to create new order";
+                        OrderDisplayModel model = new(order!, message);
+                        return Warning(model.ToJson(), 0);
                     }
 
                     Order orderToPost = new()
@@ -108,8 +133,8 @@ namespace BookShop.API.Controllers
                         }
                         else
                         {
-                            string message = "The product with ID: " + id;
-                            message = product is null ? 
+                            message += "The product with ID: " + id;
+                            message += product is null ?
                                 ", was not found in stock, please check if ID is correct." :
                                 ", currently is unavailble.";
                             return Warning(message + " Unable to process your order.", (int)HttpStatusCode.NotFound);
@@ -119,25 +144,31 @@ namespace BookShop.API.Controllers
                     _dbContext.Orders.Add(orderToPost);
                     var result = await _dbContext.SaveChangesAsync();
 
-                    string info = "OrderID: " + orderToPost.OrderId + ".For UserID: " + user.Id + "at DateTime: " + orderToPost.OrderDateTime;
                     if (result == 0)
                     {
-                        LogingWarning("Unable to process request. Order was not saved " + info);
+                        LogingWarning("Unable to process request. Order was not saved.");
                         return BadRequest("Not able to process your request. Order was not saved.");
                     }
-                    else return Successfull("Created successfully, " + info);
+                    else
+                    {
+                        message = "Order created successfully";
+                        OrderDisplayModel model = new(orderToPost, message);
+                        return Successfull(model.ToJson());
+                    }
+                        
                 }
                 return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
             }
-            catch(Exception ex)
-            { 
-                return Error(ex); 
+            catch (Exception ex)
+            {
+                return Error(ex);
             }
         }
 
+        //TODO total price should be recounting once and with every update
         //Adds more products to existing order for the current authorized user
         [HttpPut, Route("/order/products/add")]
-        public async Task<ActionResult> PutOrderAddProducts([FromForm][Required]List<string> productsIds, [Required]string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromForm][Required]List<string> productsIds, [Required]string orderId)
         {
             try
             {
@@ -150,6 +181,24 @@ namespace BookShop.API.Controllers
                     //Checks if order with requested id exists and is not submitted yet
                     if(order is not null && !order.SubmittedOrder)
                     {
+                        //Checks if previously added products in order are still available
+                        List<string> productsNotAvailable = new();
+                        foreach(string id in order.ProductsId!)
+                        {
+                            Product product = await _stockServices.GetBookByIdAsync(id);
+                            if(product is null || !product.IsAvailable)
+                            {
+                                productsNotAvailable.Add(id);
+                            }
+                        }
+                        if(productsNotAvailable.Any())
+                        {
+                            message += MessageUnavailableProducts(productsNotAvailable, order.SubmittedOrder);
+
+                            order.ProductsId = 
+                                [.. order.ProductsId.Where(id => !productsNotAvailable.Contains(id))];
+                        }
+                        //Checks if currently requested products are in stock
                         foreach (string id in productsIds)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);
@@ -157,29 +206,37 @@ namespace BookShop.API.Controllers
                             if (product is not null && product.IsAvailable)
                             {
                                 order.ProductsId!.Add(product.Id!);
-                                order.TotalPrice += product.Price;
                             }
                             else
                             {
-                                message = "The product with ID: " + id;
+                                message += "The product with ID: " + id + ", was not added to the order, because product ";
                                 message += product is null ?
-                                    ", was not found in stock, please check if ID is correct." :
-                                    ", currently is unavailble.";
-                                return Warning(message + " Unable to process your request.", (int)HttpStatusCode.NotFound);
+                                    " was not found in stock, please check if ID is correct." :
+                                    " currently is unavailble.";
                             }
                         }
+                        //recounts/resets ordr total price
+                        decimal price = 0;
+                        foreach (string id in order.ProductsId)
+                        {
+                            Product product = await _stockServices.GetBookByIdAsync(id);
+                            price += product.Price;
+                        }
+                        order.TotalPrice = price;
                         order.OrderDateTime = DateTime.Now;
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
-
-                       string info = "OrderID: " + order.OrderId + ".For UserID: " + user.Id + "at DateTime: " + order.OrderDateTime;
-                           
+ 
                         if (result == 0)
                         {
-                            return Warning("Unable to process request. Products was not added " + 
-                                info, (int)HttpStatusCode.BadRequest);
+                            return Warning("Unable to process request. Products was not added", (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull("Products added successfully, " + info);
+                        else
+                        {
+                            message += " Order updated successfully";
+                            OrderDisplayModel model = new(order, message);
+                            return Successfull(model.ToJson()); 
+                        }
                     }
                     else
                     {
@@ -352,6 +409,75 @@ namespace BookShop.API.Controllers
                 }
             }
             catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+
+        [HttpGet, Route("/order/details")]
+        public async Task<ActionResult<OrderDisplayModel>> GetOrder([Required]string orderId)
+        {
+            try
+            {
+                string info = "";
+                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                if(user is not null)
+                {
+                    Order? order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.OrderId.Equals(orderId));
+                    if (order is not null)
+                    {
+                        List<Product> productsAvailable = new();
+                        List<string> productNotAvailable = new();
+                        foreach(string productId in order.ProductsId!)
+                        {
+                            Product product = await _stockServices.GetBookByIdAsync(productId);
+                            if(product is not null && product.IsAvailable)
+                            {
+                                productsAvailable.Add(product);
+                            }
+                            else
+                            {
+                                productNotAvailable.Add(productId);
+                            }
+                        }
+                        //if in current order.ProductsId any unavailable products and order not submitted yet,
+                        //recounts total price and updates order.ProductsId
+                        if (productNotAvailable.Any() && !order.SubmittedOrder)
+                        {
+                            decimal priceUpdate = 0;
+                            order.ProductsId.Clear();
+                            foreach (Product product in productsAvailable)
+                            {
+                                order.ProductsId.Add(product.Id!);
+                                priceUpdate += product.Price;
+                            }
+
+                            order.TotalPrice = priceUpdate;
+                            _dbContext.Orders.Update(order);
+                            var result = await _dbContext.SaveChangesAsync();
+
+                            if (result == 0)
+                            {
+                               string message = "Some inner error occured. Unable to process your request. Please tyr latter or contact to supporting team.";
+                                return Warning(message, 0);
+                            }
+                            info = MessageUnavailableProducts(productNotAvailable, order.SubmittedOrder);
+                        } 
+
+                        OrderDisplayModel display = new(order, info);
+                        return Successfull(display.ToJson());
+                    }
+                    else
+                    {
+                        return Warning("Order with Id: " + orderId + ", was not found. UserID: " + user.Id + ", access declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
+                    }
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch(Exception ex)
             {
                 return Error(ex);
             }
