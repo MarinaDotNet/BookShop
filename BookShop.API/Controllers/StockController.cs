@@ -1,6 +1,8 @@
 ﻿using Asp.Versioning;
 using BookShop.API.Controllers.Services;
 using BookShop.API.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using MongoDB.Bson;
 using System.ComponentModel.DataAnnotations;
@@ -13,6 +15,8 @@ namespace BookShop.API.Controllers
      */
     [ApiController]
     [ApiVersion("1")]
+    [Authorize(Roles = ApiConstants.Admin)]
+    [EnableCors(PolicyName = ApiConstants.CorsNameAdmin)]
     [Produces("application/json")]
     [Consumes("application/json")]
     public class StockV1Controller(StockDBServices services, ILogger<StockV1Controller> logger) : ControllerBase
@@ -153,6 +157,8 @@ namespace BookShop.API.Controllers
      */
     [ApiController]
     [ApiVersion("2")]
+    [Authorize]
+    [EnableCors(PolicyName = ApiConstants.CorsNameUser)]
     [Produces("application/json")]
     [Consumes("application/json")]
     public class StockV2Controller(StockDBServices services, ILogger<StockV2Controller> logger) : ControllerBase
