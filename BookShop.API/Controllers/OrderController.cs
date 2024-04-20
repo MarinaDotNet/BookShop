@@ -16,6 +16,8 @@ using System.Net;
 namespace BookShop.API.Controllers
 {
     [ApiController]
+    [Consumes("application/json")]
+    [Produces("application/json")]
     [Authorize]
     [Route("account/")]
     public class OrderController(ILogger<OrderController> logger, UserManager<ApiUser> userManager, StockDBServices stockServices, AuthenticationApiDbContext dbContext) : ControllerBase
@@ -33,22 +35,22 @@ namespace BookShop.API.Controllers
         {
             LogingWarning(message);
             return statusCode == (int)HttpStatusCode.Unauthorized ?
-                Unauthorized(message) :
+                Unauthorized(message.ToJson()) :
                 statusCode == (int)HttpStatusCode.NotFound ? 
-                NotFound(message) :
+                NotFound(message.ToJson()) :
                 statusCode == (int)HttpStatusCode.BadRequest ?
-                BadRequest(message):
-                Problem(message);
+                BadRequest(message.ToJson()) :
+                Problem(message.ToJson());
         }
         private ActionResult Successfull(string message)
         {
             LogingInformation(message);
-            return Ok(message);
+            return Ok(message.ToJson());
         }
         private ActionResult Error(Exception ex)
         {
             LogingError(ex);
-            return Problem(ex.Message.ToString());
+            return Problem(ex.Message.ToJson());
         }
         private string GetCurrentUserName()
         {
@@ -147,7 +149,7 @@ namespace BookShop.API.Controllers
                     if (result == 0)
                     {
                         LogingWarning("Unable to process request. Order was not saved.");
-                        return BadRequest("Not able to process your request. Order was not saved.");
+                        return BadRequest("Not able to process your request. Order was not saved.".ToJson());
                     }
                     else
                     {
@@ -292,7 +294,7 @@ namespace BookShop.API.Controllers
                             return Warning("Unable to process request. Products was not removed " +
                                 info, (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull("Products removed successfully, " + info);
+                        else return Successfull("Products removed successfully, " + info.ToJson());
                     }
                     else
                     {
@@ -371,7 +373,7 @@ namespace BookShop.API.Controllers
                             if(result == 0)
                             {
                                 LogingWarning("Unable to process request. Order was not saved, OrderID" + order.OrderId);
-                                return BadRequest("Not able to process your request. Order was not saved.");
+                                return BadRequest("Not able to process your request. Order was not saved.".ToJson());
                             }
                             else
                             {
@@ -384,7 +386,9 @@ namespace BookShop.API.Controllers
                                 }
                                 else
                                 {
-                                    return Successfull("Order with id: " + order.OrderId + ", submitted successfully, at: " + order.OrderDateTime);
+                                    message = "Order submitted successfully, at: " + order.OrderDateTime;
+                                    OrderDisplayModel model = new(order, message);
+                                    return Successfull(model.ToJson());
                                 }
                             }
                         }
