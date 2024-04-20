@@ -65,7 +65,7 @@ namespace BookShop.API.Controllers
         }
 
         [HttpGet, Route("book/id")]
-        public async Task<ActionResult<Product>> GetProductById([FromQuery][StringLength(20)] string id)
+        public async Task<ActionResult<Product>> GetProductById([FromQuery]/*[StringLength(20)]*/ string id)
         {
             try
             {
@@ -212,7 +212,7 @@ namespace BookShop.API.Controllers
 
 
         [HttpGet, Route("book/id")]
-        public async Task<ActionResult<Product>> GetProductById([FromQuery][StringLength(20)] string id)
+        public async Task<ActionResult<Product>> GetProductById([FromQuery]/*[StringLength(20)]*/ string id)
         {
             try
             {
