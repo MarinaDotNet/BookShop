@@ -7,5 +7,8 @@
         public const string ApiVersionHeader = "ApiVersion-BooksStore";
         public const string User = "user";
         public const string Admin = "admin";
+        public const string CorsNameUser = "MyPolicyForUser";
+        public const string CorsNameAdmin = "MyPolicyForAdmin";
+
     }
 }
