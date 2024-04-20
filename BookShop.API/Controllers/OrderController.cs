@@ -165,7 +165,6 @@ namespace BookShop.API.Controllers
             }
         }
 
-        //TODO total price should be recounting once and with every update
         //Adds more products to existing order for the current authorized user
         [HttpPut, Route("/order/products/add")]
         public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromForm][Required]List<string> productsIds, [Required]string orderId)
