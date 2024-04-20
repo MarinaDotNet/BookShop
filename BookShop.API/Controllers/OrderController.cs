@@ -4,6 +4,7 @@ using BookShop.API.Models;
 using BookShop.API.Models.Authentication;
 using DnsClient.Protocol;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,7 @@ namespace BookShop.API.Controllers
     [Consumes("application/json")]
     [Produces("application/json")]
     [Authorize(Roles = ApiConstants.Admin)]
+    [EnableCors(PolicyName = ApiConstants.CorsNameAdmin)]
     [Route("account/")]
     public class OrderV1Controller(ILogger<OrderV1Controller> logger, UserManager<ApiUser> userManager, StockDBServices stockServices, AuthenticationApiDbContext dbContext) : ControllerBase
     {
@@ -496,6 +498,7 @@ namespace BookShop.API.Controllers
     [Consumes("application/json")]
     [Produces("application/json")]
     [Authorize]
+    [EnableCors(PolicyName = ApiConstants.CorsNameUser)]
     [Route("account/")]
     public class OrderV2Controller(ILogger<OrderV2Controller> logger, UserManager<ApiUser> userManager, StockDBServices stockServices, AuthenticationApiDbContext dbContext) : ControllerBase
     {
