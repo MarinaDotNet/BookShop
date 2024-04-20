@@ -491,6 +491,42 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
+
+        //Deleting any order
+        [HttpDelete, Route("/order/delete")]
+        [Authorize(Roles = ApiConstants.Admin)]
+        public async Task<ActionResult<OrderDisplayModel>> RemoveOrder([Required]string orderId)
+        {
+            try
+            {
+                HttpContextAccessor accessor = new();
+                if (accessor.HttpContext!.User.IsInRole(ApiConstants.Admin))
+                {
+                    Order? order = await _dbContext.Orders.FirstOrDefaultAsync(_ => _.OrderId.Equals(orderId));
+
+                    if(order is not null)
+                    {
+                        _dbContext.Remove(order);
+                        var result = await _dbContext.SaveChangesAsync();
+                        return result == 0 ? 
+                            Warning("Unable to process your request for order ID: " + orderId, 0) :
+                            Successfull(new OrderDisplayModel(order, "The Order Deleted successfully.").ToJson());
+                    }
+                    else
+                    {
+                        return Warning("Order with ID: " + orderId + ", was not found.", (int)HttpStatusCode.NotFound);
+                    }
+                }
+                else
+                {
+                    return Warning("Unauthorized access declined at: " + DateTime.Now, (int)HttpStatusCode.Unauthorized);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
     }
 
     [ApiController]
