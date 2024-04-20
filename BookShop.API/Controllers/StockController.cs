@@ -121,6 +121,28 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        [HttpDelete, Route("book/delete")]
+        public async Task<ActionResult> DeleteProduct([Required]string id)
+        {
+            try
+            {
+                Product book = await _services.GetBookByIdAsync(id);
+                if(book is not null)
+                {
+                    await _services.DeleteOneAsync(id);
+                    return Ok("Deleted successfuly: " + book.ToJson());
+                }
+                else
+                {
+                    return Warning("There nor book with ID: " + id + ", found. Requested process declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
+                }
+            }
+            catch(Exception ex)
+            {
+                return LoggError(ex.Message, ex.StackTrace!);
+            }
+        }
         #endregion
         #region of Help Methods
         private ActionResult LoggError(string errorMessage, string errorStackTrace )
