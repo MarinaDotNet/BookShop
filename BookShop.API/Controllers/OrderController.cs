@@ -173,7 +173,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -186,7 +186,7 @@ namespace BookShop.API.Controllers
                         List<string> productsNotAvailable = new();
                         foreach (string id in order.ProductsId!)
                         {
-                            Product product = await _stockServices.GetBookByIdAsync(id);
+                            Product product = await _stockServices.GetBookByIdAsync(id);                          
                             if (product is null || !product.IsAvailable)
                             {
                                 productsNotAvailable.Add(id);
@@ -220,8 +220,7 @@ namespace BookShop.API.Controllers
                         decimal price = 0;
                         foreach (string id in order.ProductsId)
                         {
-                            Product product = await _stockServices.GetBookByIdAsync(id);
-                            price += product.Price;
+                            price += (await _stockServices.GetBookByIdAsync(id)).Price;
                         }
                         order.TotalPrice = price;
                         order.OrderDateTime = DateTime.Now;
@@ -235,8 +234,7 @@ namespace BookShop.API.Controllers
                         else
                         {
                             message += " Order updated successfully";
-                            OrderDisplayModel model = new(order, message);
-                            return Successfull(model.ToJson());
+                            return Successfull(new OrderDisplayModel(order, message).ToJson());
                         }
                     }
                     else
