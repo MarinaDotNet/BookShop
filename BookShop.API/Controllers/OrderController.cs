@@ -172,7 +172,7 @@ namespace BookShop.API.Controllers
                     if (order is not null && !order.SubmittedOrder)
                     {
                         //Checks if previously added products in order are still available
-                        List<string> productsNotAvailable = new();
+                        List<string> productsNotAvailable = [];
                         foreach (string id in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);                          
@@ -193,7 +193,7 @@ namespace BookShop.API.Controllers
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);
 
-                            if (product is not null && product.IsAvailable)
+                            if (product?.IsAvailable == true)
                             {
                                 order.ProductsId!.Add(product.Id!);
                             }
@@ -346,7 +346,8 @@ namespace BookShop.API.Controllers
                                 decimal totalPrice = 0;
                                 foreach (string producId in productsIds)
                                 {
-                                    totalPrice += (await _stockServices.GetBookByIdAsync(producId)).Price;
+                                    Product product = await _stockServices.GetBookByIdAsync(producId);
+                                    totalPrice += product is not null ? product.Price : 0;
                                 }
                                 order.TotalPrice = totalPrice;
                             }
