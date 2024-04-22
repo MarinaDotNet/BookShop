@@ -8,9 +8,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Storage;
 using MongoDB.Bson;
-using MongoDB.Bson.Serialization.IdGenerators;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Net;
@@ -39,17 +37,17 @@ namespace BookShop.API.Controllers
         {
             LogingWarning(message);
             return statusCode == (int)HttpStatusCode.Unauthorized ?
-                Unauthorized(message.ToJson()) :
-                statusCode == (int)HttpStatusCode.NotFound ? 
-                NotFound(message.ToJson()) :
+                Unauthorized(message) :
+                statusCode == (int)HttpStatusCode.NotFound ?
+                NotFound(message) :
                 statusCode == (int)HttpStatusCode.BadRequest ?
-                BadRequest(message.ToJson()) :
-                Problem(message.ToJson());
+                BadRequest(message) :
+                Problem(message);
         }
         private ActionResult Successfull(string message)
         {
             LogingInformation(message);
-            return Ok(message.ToJson());
+            return Ok(message);
         }
         private ActionResult Error(Exception ex)
         {
@@ -71,10 +69,10 @@ namespace BookShop.API.Controllers
             }
         }
 
-        private string MessageUnavailableProducts(List<string>productsIdsNotFound, bool orderIsSubmitted)
+        private string MessageUnavailableProducts(List<string> productsIdsNotFound, bool orderIsSubmitted)
         {
             string message = "";
-            if(productsIdsNotFound.Any())
+            if (productsIdsNotFound.Any())
             {
                 message += "Some product from your order, currently unavailable in stock.";
                 message += orderIsSubmitted ?
@@ -88,7 +86,7 @@ namespace BookShop.API.Controllers
                     message += index != 0 ? id + ", " : id + ".";
                 }
             }
-            return message;   
+            return message;
         }
         #endregion
 
@@ -98,7 +96,7 @@ namespace BookShop.API.Controllers
         //User, should add new products to last not submitted order and submit it,
         //before to start another new order.
         [HttpPost, Route("/order")]
-        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromForm]List<string> productsIds)
+        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromQuery]List<string> productsIds)
         {
             try
             {
@@ -111,7 +109,7 @@ namespace BookShop.API.Controllers
                     //checks if user has an uncompleted orders before to create new order
                     if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
-                        Order ? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
+                        Order? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
                         message = "Please submit order above before to create new order";
                         OrderDisplayModel model = new(order!, message);
                         return Warning(model.ToJson(), 0);
@@ -161,7 +159,7 @@ namespace BookShop.API.Controllers
                         OrderDisplayModel model = new(orderToPost, message);
                         return Successfull(model.ToJson());
                     }
-                        
+
                 }
                 return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
             }
@@ -173,7 +171,7 @@ namespace BookShop.API.Controllers
 
         //Adds more products to existing order for the current authorized user
         [HttpPut, Route("/order/products/add")]
-        public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromForm][Required]List<string> productsIds, [Required]string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromQuery]List<string> productsIds, [FromQuery][Required] string orderId)
         {
             try
             {
@@ -181,26 +179,26 @@ namespace BookShop.API.Controllers
                 string message = "";
                 if (user is not null)
                 {
-                    Order ? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
+                    Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
 
                     //Checks if order with requested id exists and is not submitted yet
-                    if(order is not null && !order.SubmittedOrder)
+                    if (order is not null && !order.SubmittedOrder)
                     {
                         //Checks if previously added products in order are still available
                         List<string> productsNotAvailable = new();
-                        foreach(string id in order.ProductsId!)
+                        foreach (string id in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);
-                            if(product is null || !product.IsAvailable)
+                            if (product is null || !product.IsAvailable)
                             {
                                 productsNotAvailable.Add(id);
                             }
                         }
-                        if(productsNotAvailable.Any())
+                        if (productsNotAvailable.Any())
                         {
                             message += MessageUnavailableProducts(productsNotAvailable, order.SubmittedOrder);
 
-                            order.ProductsId = 
+                            order.ProductsId =
                                 [.. order.ProductsId.Where(id => !productsNotAvailable.Contains(id))];
                         }
                         //Checks if currently requested products are in stock
@@ -231,7 +229,7 @@ namespace BookShop.API.Controllers
                         order.OrderDateTime = DateTime.Now;
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
- 
+
                         if (result == 0)
                         {
                             return Warning("Unable to process request. Products was not added", (int)HttpStatusCode.BadRequest);
@@ -240,7 +238,7 @@ namespace BookShop.API.Controllers
                         {
                             message += " Order updated successfully";
                             OrderDisplayModel model = new(order, message);
-                            return Successfull(model.ToJson()); 
+                            return Successfull(model.ToJson());
                         }
                     }
                     else
@@ -257,7 +255,7 @@ namespace BookShop.API.Controllers
                     return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 return Error(ex);
             }
@@ -265,7 +263,7 @@ namespace BookShop.API.Controllers
 
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
-        public async Task<ActionResult> PutOrderDeleteProducts([FromForm][Required]List<string> productIds, [Required]string orderId)
+        public async Task<ActionResult> PutOrderDeleteProducts([FromQuery]List<string>productIds, [FromQuery][Required]string orderId)
         {
             try
             {
@@ -278,9 +276,9 @@ namespace BookShop.API.Controllers
                     //Checks if order with requested id exists and is not submitted yet
                     if (order is not null && !order.SubmittedOrder)
                     {
-                        foreach(string id in productIds)
+                        foreach (string id in productIds)
                         {
-                            if(order.ProductsId!.Contains(id))
+                            if (order.ProductsId!.Contains(id))
                             {
                                 decimal price = (await _stockServices.GetBookByIdAsync(id)).Price;
                                 order.ProductsId.Remove(id);
@@ -325,7 +323,7 @@ namespace BookShop.API.Controllers
         //If some products is not available, then deletes it from order, recounting total price and
         //informing the user about this and that the order needs to be double-checked and resubmit it
         [HttpPut, Route("/order/submit")]
-        public async Task<ActionResult> PutOrderAsSubmitted([FromForm][Required]string orderId)
+        public async Task<ActionResult> PutOrderAsSubmitted([FromQuery]string orderId)
         {
             try
             {
@@ -424,7 +422,7 @@ namespace BookShop.API.Controllers
         //For ApiVersion 1, can information about any order, version for users in admin role
         [HttpGet, Route("/order/details")]
         [Authorize(Roles = ApiConstants.Admin)]
-        public async Task<ActionResult<OrderDisplayModel>> GetOrder([Required]string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> GetOrder([FromQuery]string orderId)
         {
             try
             {
@@ -492,10 +490,39 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //Gets all orders for currentlly signed in account
+        [HttpGet, Route("/order/all")]
+        public async Task<ActionResult<List<OrderDisplayModel>>> GetAllOrders()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+
+                if (user is not null)
+                {
+                    List<Order> orders = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id)).ToListAsync();
+
+                    List<OrderDisplayModel> model = [];
+
+                    orders?.ForEach(order => model.Add(new(order, "")));
+
+                    return model.Any() ? Successfull(model.ToJson()) :
+                        Warning("There nor orders found for user: " + user.UserName, (int)HttpStatusCode.NoContent);
+                }
+                else
+                {
+                    return Warning("Please sign in, Unauthorized access declined.", (int)HttpStatusCode.Unauthorized);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
         //Deleting any order
         [HttpDelete, Route("/order/delete")]
         [Authorize(Roles = ApiConstants.Admin)]
-        public async Task<ActionResult<OrderDisplayModel>> RemoveOrder([Required]string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> RemoveOrder([FromQuery]string orderId)
         {
             try
             {
@@ -551,22 +578,22 @@ namespace BookShop.API.Controllers
         {
             LogingWarning(message);
             return statusCode == (int)HttpStatusCode.Unauthorized ?
-                Unauthorized(message.ToJson()) :
+                Unauthorized(message) :
                 statusCode == (int)HttpStatusCode.NotFound ?
-                NotFound(message.ToJson()) :
+                NotFound(message) :
                 statusCode == (int)HttpStatusCode.BadRequest ?
-                BadRequest(message.ToJson()) :
-                Problem(message.ToJson());
+                BadRequest(message) :
+                Problem(message);
         }
         private ActionResult Successfull(string message)
         {
             LogingInformation(message);
-            return Ok(message.ToJson());
+            return Ok(message);
         }
         private ActionResult Error(Exception ex)
         {
             LogingError(ex);
-            return Problem(ex.Message.ToJson());
+            return Problem(ex.Message);
         }
         private string GetCurrentUserName()
         {
@@ -610,7 +637,7 @@ namespace BookShop.API.Controllers
         //User, should add new products to last not submitted order and submit it,
         //before to start another new order.
         [HttpPost, Route("/order")]
-        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromForm] List<string> productsIds)
+        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromQuery]List<string> productsIds)
         {
             try
             {
@@ -685,7 +712,7 @@ namespace BookShop.API.Controllers
 
         //Adds more products to existing order for the current authorized user
         [HttpPut, Route("/order/products/add")]
-        public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromForm][Required] List<string> productsIds, [Required] string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromQuery] List<string> productsIds, [Required] string orderId)
         {
             try
             {
@@ -777,7 +804,7 @@ namespace BookShop.API.Controllers
 
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
-        public async Task<ActionResult> PutOrderDeleteProducts([FromForm][Required] List<string> productIds, [Required] string orderId)
+        public async Task<ActionResult> PutOrderDeleteProducts([FromQuery] List<string> productIds, [Required] string orderId)
         {
             try
             {
@@ -837,7 +864,7 @@ namespace BookShop.API.Controllers
         //If some products is not available, then deletes it from order, recounting total price and
         //informing the user about this and that the order needs to be double-checked and resubmit it
         [HttpPut, Route("/order/submit")]
-        public async Task<ActionResult> PutOrderAsSubmitted([FromForm][Required] string orderId)
+        public async Task<ActionResult> PutOrderAsSubmitted([FromQuery]string orderId)
         {
             try
             {
@@ -935,7 +962,7 @@ namespace BookShop.API.Controllers
 
         //Checks before if current user has authority to access to the requested order
         [HttpGet, Route("/order/details")]
-        public async Task<ActionResult<OrderDisplayModel>> GetOrder([Required] string orderId)
+        public async Task<ActionResult<OrderDisplayModel>> GetOrder([FromQuery] string orderId)
         {
             try
             {
@@ -995,6 +1022,36 @@ namespace BookShop.API.Controllers
                 else
                 {
                     return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+
+        //Gets all orders for currentlly signed in account
+        [HttpGet, Route("/order/all")]
+        public async Task<ActionResult<List<OrderDisplayModel>>> GetAllOrders()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+
+                if (user is not null)
+                {
+                    List<Order> orders = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id)).ToListAsync();
+
+                    List<OrderDisplayModel> model = [];
+
+                    orders?.ForEach(order => model.Add(new(order, "")));
+
+                    return model.Any() ? Successfull(model.ToJson()) :
+                        Warning("There nor orders found for user: " + user.UserName, (int)HttpStatusCode.NoContent);
+                }
+                else
+                {
+                    return Warning("Please sign in, Unauthorized access declined.", (int)HttpStatusCode.Unauthorized);
                 }
             }
             catch (Exception ex)
