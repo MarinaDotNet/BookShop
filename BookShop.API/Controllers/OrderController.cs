@@ -688,7 +688,7 @@ namespace BookShop.API.Controllers
                     if (order is not null && !order.SubmittedOrder)
                     {
                         //Checks if previously added products in order are still available
-                        List<string> productsNotAvailable = new();
+                        List<string> productsNotAvailable = [];
                         foreach (string id in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);
@@ -725,8 +725,7 @@ namespace BookShop.API.Controllers
                         decimal price = 0;
                         foreach (string id in order.ProductsId)
                         {
-                            Product product = await _stockServices.GetBookByIdAsync(id);
-                            price += product.Price;
+                            price += (await _stockServices.GetBookByIdAsync(id)).Price;
                         }
                         order.TotalPrice = price;
                         order.OrderDateTime = DateTime.Now;
@@ -735,14 +734,11 @@ namespace BookShop.API.Controllers
 
                         if (result == 0)
                         {
-                            return Warning("Unable to process request. Products was not added", (int)HttpStatusCode.BadRequest);
+                            return Warning("Unable to process request. Products was not added", 
+                                (int)HttpStatusCode.BadRequest);
                         }
-                        else
-                        {
-                            message += " Order updated successfully";
-                            OrderDisplayModel model = new(order, message);
-                            return Successfull(model.ToJson());
-                        }
+                        else return Successfull(new OrderDisplayModel(order, 
+                            " Order updated successfully").ToJson());
                     }
                     else
                     {
