@@ -615,10 +615,8 @@ namespace BookShop.API.Controllers
                     //checks if user has an uncompleted orders before to create new order
                     if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
-                        Order? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
-                        message = "Please submit order above before to create new order";
-                        OrderDisplayModel model = new(order!, message);
-                        return Warning(model.ToJson(), 0);
+                        return Warning(new OrderDisplayModel(listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder)!, 
+                            "Please submit order above before to create new order").ToJson(), 0);
                     }
 
                     Order orderToPost = new()
@@ -656,18 +654,17 @@ namespace BookShop.API.Controllers
 
                     if (result == 0)
                     {
-                        LogingWarning("Unable to process request. Order was not saved.");
-                        return BadRequest("Not able to process your request. Order was not saved.".ToJson());
+                        return Warning("Unable to process request. Order was not saved.", (int)HttpStatusCode.BadRequest);
                     }
                     else
                     {
-                        message = "Order created successfully";
-                        OrderDisplayModel model = new(orderToPost, message);
-                        return Successfull(model.ToJson());
+                        return Successfull(new OrderDisplayModel(orderToPost, 
+                            "Order created successfully").ToJson());
                     }
 
                 }
-                return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                return Warning("User was not found in system, please ensure that you signed in", 
+                    (int)HttpStatusCode.BadRequest);
             }
             catch (Exception ex)
             {
