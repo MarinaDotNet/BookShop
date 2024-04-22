@@ -429,7 +429,7 @@ namespace BookShop.API.Controllers
                         foreach(string productId in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(productId);
-                            if(product is not null && product.IsAvailable)
+                            if(product?.IsAvailable == true )
                             {
                                 productsAvailable.Add(product);
                             }
