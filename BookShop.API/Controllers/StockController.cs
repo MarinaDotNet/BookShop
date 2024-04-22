@@ -143,6 +143,47 @@ namespace BookShop.API.Controllers
                 return LoggError(ex.Message, ex.StackTrace!);
             }
         }
+
+        [HttpPut, Route("book/update")]
+        public async Task<ActionResult<Product>> PutProduct([FromQuery]Product book)
+        {
+            try
+            {
+                Product bookInDb = await _services.GetBookByIdAsync(book.Id!);
+
+                if(bookInDb is not null)
+                {
+                    book.Title ??= bookInDb.Title;
+                    book.Author ??= bookInDb.Author;
+                    book.Annotation ??= bookInDb.Annotation;
+                    book.Language ??= bookInDb.Language;
+
+                    if(book.Genres.Contains("undefined") && !bookInDb.Genres.Contains("undefined"))
+                    {
+                        book.Genres = [ ..bookInDb.Genres];
+                    }
+
+                    book.Price = book.Price != 0 ? book.Price : bookInDb.Price;
+                    book.Link = book.Link is not null && Uri.IsWellFormedUriString(book.Link.ToString(), UriKind.Absolute) ? book.Link :
+                        bookInDb.Link is not null && Uri.IsWellFormedUriString(bookInDb.Link.ToString(), UriKind.Absolute) ? bookInDb.Link : new Uri("about:blank");
+
+                    await _services.UpdateNewAsync(book);
+
+                    LoggInfo((int)HttpStatusCode.OK, "Successfully updated: " + book.Id);
+                    return Ok(book.ToJson());
+                }
+                else
+                {
+                    return book.Id is null ? 
+                        Warning("Requires existing product ID for update request", (int)HttpStatusCode.BadRequest):
+                        Warning("Product with ID: " + book.Id + ", was not found in stock.", (int)HttpStatusCode.NotFound);
+                }
+            }
+            catch(Exception ex)
+            {
+                return LoggError(ex.Message, ex.StackTrace!);
+            }
+        }
         #endregion
         #region of Help Methods
         private ActionResult LoggError(string errorMessage, string errorStackTrace )
