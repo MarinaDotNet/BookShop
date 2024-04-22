@@ -54,20 +54,6 @@ namespace BookShop.API.Controllers
             LogingError(ex);
             return Problem(ex.Message);
         }
-        private string GetCurrentUserName()
-        {
-            try
-            {
-                HttpContextAccessor accessor = new();
-                var name = accessor.HttpContext!.User.Identity!.Name!;
-                return name;
-            }
-            catch (Exception ex)
-            {
-                LogingError(ex);
-                return string.Empty;
-            }
-        }
 
         private string MessageUnavailableProducts(List<string> productsIdsNotFound, bool orderIsSubmitted)
         {
