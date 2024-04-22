@@ -357,7 +357,7 @@ namespace BookShop.API.Controllers
                                 foreach (string producId in productsIds)
                                 {
                                     Product product = await _stockServices.GetBookByIdAsync(producId);
-                                    totalPrice += product is not null ? product.Price : 0;
+                                    totalPrice += product is not null && product.IsAvailable ? product.Price : 0;
                                 }
                                 order.TotalPrice = totalPrice;
                             }
