@@ -167,6 +167,9 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //TODO return total number of products added
+        //TODO return ID's of added products
+        //TODO if any products deleted from order, because not available, return total number of deleted products
         //Adds more products to existing order for the current authorized user
         [HttpPut, Route("/order/products/add")]
         public async Task<ActionResult<OrderDisplayModel>> PutOrderAddProducts([FromQuery]List<string> productsIds, [FromQuery][Required] string orderId)
@@ -257,13 +260,16 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //TODO add error when trying to delete products that is not in order, or when products unavailable/not exists
+        //TODO return total number of products deleted
+        //TODO return ID's of deleted products
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
         public async Task<ActionResult> PutOrderDeleteProducts([FromQuery]List<string>productIds, [FromQuery][Required]string orderId)
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -276,23 +282,22 @@ namespace BookShop.API.Controllers
                         {
                             if (order.ProductsId!.Contains(id))
                             {
-                                decimal price = (await _stockServices.GetBookByIdAsync(id)).Price;
                                 order.ProductsId.Remove(id);
-                                order.TotalPrice -= price;
+                                order.TotalPrice -= (await _stockServices.GetBookByIdAsync(id)).Price;
                             }
                         }
                         order.OrderDateTime = DateTime.Now;
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
 
-                        string info = "OrderID: " + order.OrderId + ".For UserID: " + user.Id + "at DateTime: " + order.OrderDateTime;
+                        string info = "OrderID: " + order.OrderId + ". For user: " + user.UserName + "at DateTime: " + order.OrderDateTime;
 
                         if (result == 0)
                         {
                             return Warning("Unable to process request. Products was not removed " +
                                 info, (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull("Products removed successfully, " + info.ToJson());
+                        else return Successfull(new OrderDisplayModel(order, "Products removed successfully, " + info).ToJson());
                     }
                     else
                     {
