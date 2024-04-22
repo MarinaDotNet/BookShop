@@ -52,7 +52,7 @@ namespace BookShop.API.Controllers
         private ActionResult Error(Exception ex)
         {
             LogingError(ex);
-            return Problem(ex.Message.ToJson());
+            return Problem(ex.Message);
         }
         private string GetCurrentUserName()
         {
@@ -102,7 +102,7 @@ namespace BookShop.API.Controllers
             {
                 string message = "";
                 //checks if user is signed in to create order
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 if (user is not null)
                 {
                     var listOfOrders = await _dbContext.Orders.Where(_ => _.UserId.Equals(user!.Id)).ToListAsync();
@@ -130,7 +130,7 @@ namespace BookShop.API.Controllers
                     {
                         Product product = await _stockServices.GetBookByIdAsync(id);
 
-                        if (product is not null && product.IsAvailable)
+                        if (product?.IsAvailable == true)
                         {
                             orderToPost.ProductsId!.Add(product.Id!);
                             orderToPost.TotalPrice += product.Price;
@@ -147,16 +147,14 @@ namespace BookShop.API.Controllers
 
                     _dbContext.Orders.Add(orderToPost);
                     var result = await _dbContext.SaveChangesAsync();
-
+                    
                     if (result == 0)
                     {
-                        LogingWarning("Unable to process request. Order was not saved.");
-                        return BadRequest("Not able to process your request. Order was not saved.".ToJson());
+                        return Warning("Unable to process request. Order was not saved.", (int)HttpStatusCode.BadRequest);
                     }
                     else
                     {
-                        message = "Order created successfully";
-                        OrderDisplayModel model = new(orderToPost, message);
+                        OrderDisplayModel model = new(orderToPost, "Order created successfully");
                         return Successfull(model.ToJson());
                     }
 
