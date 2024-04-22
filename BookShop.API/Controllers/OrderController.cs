@@ -96,9 +96,8 @@ namespace BookShop.API.Controllers
                     if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
                         Order? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
-                        message = "Please submit order above before to create new order";
-                        OrderDisplayModel model = new(order!, message);
-                        return Warning(model.ToJson(), 0);
+                        return Warning(new OrderDisplayModel(order!, 
+                            "Please submit order above before to create new order").ToJson(), 0);
                     }
 
                     Order orderToPost = new()
@@ -246,9 +245,6 @@ namespace BookShop.API.Controllers
             }
         }
 
-        //TODO add error when trying to delete products that is not in order, or when products unavailable/not exists
-        //TODO return total number of products deleted
-        //TODO return ID's of deleted products
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
         public async Task<ActionResult> PutOrderDeleteProducts([FromQuery]List<string>productIds, [FromQuery][Required]string orderId)
@@ -262,22 +258,36 @@ namespace BookShop.API.Controllers
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
 
                     //Checks if order with requested id exists and is not submitted yet
-                    if (order is not null && !order.SubmittedOrder)
+                    if (order?.SubmittedOrder == false)
                     {
                         foreach (string id in productIds)
                         {
                             if (order.ProductsId!.Contains(id))
                             {
                                 order.ProductsId.Remove(id);
-                                order.TotalPrice -= (await _stockServices.GetBookByIdAsync(id)).Price;
                             }
+                        }
+                        
+                        //Checking if the rest of products in order isAvailable and recounting total price of order
+                        order.TotalPrice = 0;
+                        foreach(string id in order.ProductsId!)
+                        {
+                            Product product = await _stockServices.GetBookByIdAsync(id);
+                            if(product?.IsAvailable == true)
+                            {
+                                order.TotalPrice += product.Price;
+                            }
+                            else
+                            {
+                                order.ProductsId.Remove(id);
+                            }
+                            
                         }
                         order.OrderDateTime = DateTime.Now;
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
 
                         string info = "OrderID: " + order.OrderId + ". For user: " + user.UserName + "at DateTime: " + order.OrderDateTime;
-
                         if (result == 0)
                         {
                             return Warning("Unable to process request. Products was not removed " +
