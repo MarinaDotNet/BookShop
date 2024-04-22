@@ -319,6 +319,7 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //TODO if any products deleted from order, because not available, return total number of deleted products
         //Submitts orders
         //Checks if there all products still available in stock before submmiting.
         //If some products is not available, then deletes it from order, recounting total price and
@@ -328,7 +329,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -341,8 +342,8 @@ namespace BookShop.API.Controllers
                         if(order.ProductsId!.Any())
                         {
                             string idsDeleted = "";
-                            List<string> productsIds = order.ProductsId!.ToList();
-                            List<string> productsIdNotAvailable = new();
+                            List<string> productsIds = [.. order.ProductsId!];
+                            List<string> productsIdNotAvailable = [];
                             foreach (string productId in productsIds)
                             {
                                 Product product = await _stockServices.GetBookByIdAsync(productId);
@@ -359,9 +360,7 @@ namespace BookShop.API.Controllers
                                 decimal totalPrice = 0;
                                 foreach (string producId in productsIds)
                                 {
-                                    Product product = await _stockServices.GetBookByIdAsync(producId);
-                                    totalPrice = product is not null && product.IsAvailable ?
-                                        totalPrice + product.Price : totalPrice + 0;
+                                    totalPrice += (await _stockServices.GetBookByIdAsync(producId)).Price;
                                 }
                                 order.TotalPrice = totalPrice;
                             }
@@ -375,8 +374,7 @@ namespace BookShop.API.Controllers
                             //Checks the result 
                             if(result == 0)
                             {
-                                LogingWarning("Unable to process request. Order was not saved, OrderID" + order.OrderId);
-                                return BadRequest("Not able to process your request. Order was not saved.".ToJson());
+                                return Warning("Unable to process request. Order was not saved, OrderID: " + order.OrderId, (int)HttpStatusCode.BadRequest);
                             }
                             else
                             {
@@ -387,12 +385,7 @@ namespace BookShop.API.Controllers
                                     message = "The product/products with id: " + idsDeleted + ", was not found or        currently unavailable. Those products was removed from your order. Order was not subbmitted. Please recheck the order and resubmit it again.";
                                     return Warning(message, (int)HttpStatusCode.NotFound);
                                 }
-                                else
-                                {
-                                    message = "Order submitted successfully, at: " + order.OrderDateTime;
-                                    OrderDisplayModel model = new(order, message);
-                                    return Successfull(model.ToJson());
-                                }
+                                else return Successfull(new OrderDisplayModel(order, "Order submitted successfully, at: " + order.OrderDateTime).ToJson());
                             }
                         }
                         else
