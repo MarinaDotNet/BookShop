@@ -645,7 +645,7 @@ namespace BookShop.API.Controllers
                     {
                         Product product = await _stockServices.GetBookByIdAsync(id);
 
-                        if (product is not null && product.IsAvailable)
+                        if (product?.IsAvailable == true)
                         {
                             orderToPost.ProductsId!.Add(product.Id!);
                             orderToPost.TotalPrice += product.Price;
@@ -696,7 +696,7 @@ namespace BookShop.API.Controllers
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
 
                     //Checks if order with requested id exists and is not submitted yet
-                    if (order is not null && !order.SubmittedOrder)
+                    if (order?.SubmittedOrder == false)
                     {
                         //Checks if previously added products in order are still available
                         List<string> productsNotAvailable = [];
@@ -720,7 +720,7 @@ namespace BookShop.API.Controllers
                         {
                             Product product = await _stockServices.GetBookByIdAsync(id);
 
-                            if (product is not null && product.IsAvailable)
+                            if (product?.IsAvailable == true)
                             {
                                 order.ProductsId!.Add(product.Id!);
                             }
@@ -784,7 +784,7 @@ namespace BookShop.API.Controllers
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
 
                     //Checks if order with requested id exists and is not submitted yet
-                    if (order is not null && !order.SubmittedOrder)
+                    if (order?.SubmittedOrder == false)
                     {
                         foreach (string id in productIds)
                         {
@@ -843,7 +843,7 @@ namespace BookShop.API.Controllers
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
 
                     //Checks if order with requested id exists and is not submitted yet
-                    if (order is not null && !order.SubmittedOrder)
+                    if (order?.SubmittedOrder == false)
                     {
                         //Checks if all products in order exists and available
                         if (order.ProductsId!.Any())
@@ -941,12 +941,12 @@ namespace BookShop.API.Controllers
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
                     if (order is not null)
                     {
-                        List<Product> productsAvailable = new();
-                        List<string> productNotAvailable = new();
+                        List<Product> productsAvailable = [];
+                        List<string> productNotAvailable = [];
                         foreach (string productId in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(productId);
-                            if (product is not null && product.IsAvailable)
+                            if (product?.IsAvailable == true)
                             {
                                 productsAvailable.Add(product);
                             }
