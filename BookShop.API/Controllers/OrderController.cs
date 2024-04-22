@@ -759,7 +759,7 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
-
+ 
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
         public async Task<ActionResult> PutOrderDeleteProducts([FromQuery] List<string> productIds, [Required] string orderId)
@@ -779,9 +779,8 @@ namespace BookShop.API.Controllers
                         {
                             if (order.ProductsId!.Contains(id))
                             {
-                                decimal price = (await _stockServices.GetBookByIdAsync(id)).Price;
                                 order.ProductsId.Remove(id);
-                                order.TotalPrice -= price;
+                                order.TotalPrice -= (await _stockServices.GetBookByIdAsync(id)).Price;
                             }
                         }
                         order.OrderDateTime = DateTime.Now;
