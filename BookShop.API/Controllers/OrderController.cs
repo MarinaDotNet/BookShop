@@ -574,20 +574,6 @@ namespace BookShop.API.Controllers
             LogingError(ex);
             return Problem(ex.Message);
         }
-        private string GetCurrentUserName()
-        {
-            try
-            {
-                HttpContextAccessor accessor = new();
-                var name = accessor.HttpContext!.User.Identity!.Name!;
-                return name;
-            }
-            catch (Exception ex)
-            {
-                LogingError(ex);
-                return string.Empty;
-            }
-        }
 
         private string MessageUnavailableProducts(List<string> productsIdsNotFound, bool orderIsSubmitted)
         {
@@ -622,7 +608,7 @@ namespace BookShop.API.Controllers
             {
                 string message = "";
                 //checks if user is signed in to create order
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 if (user is not null)
                 {
                     var listOfOrders = await _dbContext.Orders.Where(_ => _.UserId.Equals(user!.Id)).ToListAsync();
@@ -695,7 +681,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -787,7 +773,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -847,7 +833,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 string message = "";
                 if (user is not null)
                 {
@@ -946,7 +932,7 @@ namespace BookShop.API.Controllers
             try
             {
                 string info = "";
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 if (user is not null)
                 {
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(order => order.UserId.Equals(user.Id) && order.OrderId.Equals(orderId));
