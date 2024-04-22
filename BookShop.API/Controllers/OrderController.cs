@@ -421,14 +421,14 @@ namespace BookShop.API.Controllers
             try
             {
                 string info = "";
-                var user = await _userManager.FindByNameAsync(GetCurrentUserName());
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
                 if(user is not null)
                 {
                     Order? order = await _dbContext.Orders.FirstOrDefaultAsync(o => o.OrderId.Equals(orderId));
                     if (order is not null)
                     {
-                        List<Product> productsAvailable = new();
-                        List<string> productNotAvailable = new();
+                        List<Product> productsAvailable = [];
+                        List<string> productNotAvailable = [];
                         foreach(string productId in order.ProductsId!)
                         {
                             Product product = await _stockServices.GetBookByIdAsync(productId);
@@ -465,12 +465,11 @@ namespace BookShop.API.Controllers
                             info = MessageUnavailableProducts(productNotAvailable, order.SubmittedOrder);
                         } 
 
-                        OrderDisplayModel display = new(order, info);
-                        return Successfull(display.ToJson());
+                        return Successfull(new OrderDisplayModel(order, info).ToJson());
                     }
                     else
                     {
-                        return Warning("Order with Id: " + orderId + ", was not found. UserID: " + user.Id + ", access declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
+                        return Warning("Order with Id: " + orderId + ", was not found. Access declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
                     }
                 }
                 else
