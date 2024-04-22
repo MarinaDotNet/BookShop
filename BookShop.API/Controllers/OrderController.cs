@@ -410,6 +410,32 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //For ApiVersion 1, unsubmitting any submitted order
+        [HttpPut, Route("order/unsubmit")]
+        [Authorize(Roles = ApiConstants.Admin)]
+        public async Task<ActionResult<OrderDisplayModel>> PutOrderAsUnsubmitted([FromQuery]string orderId)
+        {
+            try
+            {
+                Order? order = await _dbContext.Orders.FirstOrDefaultAsync(_ => _.OrderId.Equals(orderId));
+                if(order is not null)
+                {
+                    order.SubmittedOrder = false;
+                    _dbContext.Orders.Update(order);
+                    var result = await _dbContext.SaveChangesAsync();
+                    return result != 0 ? 
+                        Successfull("Order: " + order.OrderId + ", successfully unsubmitted") :
+                        Warning("Unable to process your request for order: " + order.OrderId, 
+                        (int)HttpStatusCode.BadRequest);
+                }
+                return Warning("Order with ID: " + orderId + ", was not found", (int)HttpStatusCode.NotFound);
+            }
+            catch(Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+
         //For ApiVersion 1, can information about any order, version for users in admin role
         [HttpGet, Route("/order/details")]
         [Authorize(Roles = ApiConstants.Admin)]
