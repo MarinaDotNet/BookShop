@@ -128,6 +128,35 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        //return all genres in database
+        [HttpGet, Route("books/genres")]
+        public async Task<ActionResult<List<string>>> GetAllGenres()
+        {
+            try
+            {
+                var products = await _services.GetAllBooksAsync();
+                if (products.Any())
+                {
+                    List<string> genres = [];
+
+                    foreach(var product in products)
+                    {
+                        if(product.Genres.Any())
+                        { 
+                            genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
+                        }                      
+                    }
+                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                }
+                else return NotFound("No record found");
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return NotFound("No records found");
+            }
+        }
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
@@ -249,7 +278,7 @@ namespace BookShop.API.Controllers
                 Problem(message.ToJson());
         }
 
-        #region or Sorting Methods
+        #region of Sorting Methods
         //MAY RETURN NULL LIST
         //returns sorted list
         private List<Product> OrderBy(PageModel model, List<Product> products)
@@ -403,6 +432,35 @@ namespace BookShop.API.Controllers
             {
                 LoggError(ex.Message.ToString(), ex.StackTrace!);
                 return Problem(ex.Message);
+            }
+        }
+
+        //return all genres in database
+        [HttpGet, Route("books/genres")]
+        public async Task<ActionResult<List<string>>> GetAllGenres()
+        {
+            try
+            {
+                var products = await _services.GetAllBooksAsync();
+                if (products.Any())
+                {
+                    List<string> genres = [];
+
+                    foreach (var product in products)
+                    {
+                        if (product.Genres.Any() && product.IsAvailable)
+                        {
+                            genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
+                        }
+                    }
+                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                }
+                else return NotFound("No record found");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return NotFound("No records found");
             }
         }
         #endregion
