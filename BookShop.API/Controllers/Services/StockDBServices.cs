@@ -145,10 +145,10 @@ namespace BookShop.API.Controllers.Services
         public async Task<List<Product>> GetBooksEqualsConditionAsync(string condition, bool ascending, string orderParameter)
         {
            var products = await _collection.Find(_ =>
-                _.Author!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-                _.Title!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-                _.Language!.Equals(condition, StringComparison.OrdinalIgnoreCase) ||
-                _.Genres!.ToArray().Any(genre => genre.Equals(condition, StringComparison.OrdinalIgnoreCase))
+                _.Author!.Trim().Equals(condition.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                _.Title!.Trim().Equals(condition.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                _.Language!.Trim().Equals(condition.Trim(), StringComparison.OrdinalIgnoreCase) ||
+                _.Genres!.ToArray().Any(genre => genre.Trim().Equals(condition.Trim(), StringComparison.OrdinalIgnoreCase))
                 ).ToListAsync();
 
             return orderParameter.Equals("author", StringComparison.OrdinalIgnoreCase) ?
@@ -166,10 +166,10 @@ namespace BookShop.API.Controllers.Services
         public async Task<List<Product>> GetBooksContainsConditionAsync(string condition, bool ascending, string orderParameter)
         {
             var products = await _collection.Find(_ =>
-                _.Author!.ToUpper().Contains(condition.ToUpper()) ||
-                _.Title!.ToUpper().Contains(condition.ToUpper()) ||
-                _.Language!.ToUpper().Contains(condition.ToUpper()) ||
-                _.Genres!.ToArray().Any(genre => genre.ToUpper().Contains(condition.ToUpper()))
+                _.Author!.Trim().ToUpper().Contains(condition.Trim().ToUpper()) ||
+                _.Title!.Trim().ToUpper().Contains(condition.Trim().ToUpper()) ||
+                _.Language!.Trim().ToUpper().Contains(condition.Trim().ToUpper()) ||
+                _.Genres!.ToArray().Any(genre => genre.Trim().ToUpper().Contains(condition.Trim().ToUpper()))
                 ).ToListAsync();
 
             return orderParameter.Equals("author", StringComparison.OrdinalIgnoreCase) ?
