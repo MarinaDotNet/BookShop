@@ -760,7 +760,7 @@ namespace BookShop.API.Controllers
         }
 
         //Applyes FilterProducts to the List<Product>, and returns filtered list
-        //Exception FilterProducts.IsAvailable always is true
+        //Exception FilterProducts.IsAvailable always is TRUE
         private List<Product> ApplyFilters(List<Product> products, FilterProducts filter)
         {
             try
