@@ -88,7 +88,7 @@ namespace BookShop.API.Controllers
 
         //gets a list of Product, where Product.IsAvailable == isAvailable
         [HttpGet, Route("books/available")]
-        public async Task<ActionResult<Product>> GetProductAvailable([FromQuery]bool isAvailable)
+        public async Task<ActionResult<List<Product>>> GetProductAvailable([FromQuery]bool isAvailable)
         {
             try
             {
@@ -103,6 +103,31 @@ namespace BookShop.API.Controllers
 
         }
 
+        //gets a list of Product, where Product.IsAvailable == isAvailable, at requested page
+        //minimum quantity per page = 5, maximum quantity per page = 30
+        [HttpGet, Route("books/available/page")]
+        public async Task<ActionResult<List<Product>>> GetPageProductsAvailable([FromQuery]bool isAvailable, [FromQuery]PageModel model)
+        {
+            try
+            {
+                Query query = new(model.RequestedPage, model.QuantityPerPage, (int)GetQuantityAvailable(isAvailable).Result);
+
+                var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable == isAvailable);
+                List<Product> result = OrderBy(model, [..products]);
+                
+                if(result.Any())
+                {
+                    result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
+                    return Ok(result);
+                }
+                return NotFound("There no products found under entered requirements");
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
@@ -224,6 +249,44 @@ namespace BookShop.API.Controllers
                 Problem(message.ToJson());
         }
 
+        #region or Sorting Methods
+        //MAY RETURN NULL LIST
+        //returns sorted list
+        private List<Product> OrderBy(PageModel model, List<Product> products)
+        {
+            try
+            {
+                if(products.Any())
+                {
+                    List<Product> result = [];
+                    if (model.InAscendingOrder)
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Title)] :
+                            [.. products.OrderBy(_ => _.Price)];
+                    }
+                    else
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Title)] :
+                            [.. products.OrderByDescending(_ => _.Price)];
+                    }
+
+                    return result;
+                }
+                return [];
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
+        #endregion
         #region of count methods
         //returns quantity of all products in database
         [HttpGet, Route("books/count/all")]
@@ -237,6 +300,22 @@ namespace BookShop.API.Controllers
             catch(Exception ex)
             {
                 LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return 0;
+            }
+        }
+
+        //returns quantity of products in database that Product.IsAvailable == available
+        [HttpGet, Route("books/count/available")]
+        public async Task<int> GetQuantityAvailable(bool available)
+        {
+            try
+            {
+                int quantity = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable == available).Count();
+                return quantity;
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
                 return 0;
             }
         }
