@@ -157,6 +157,29 @@ namespace BookShop.API.Controllers
                 return NotFound("No records found");
             }
         }
+
+        //returns all books in genre
+        [HttpGet, Route("books/genre")]
+        public async Task<ActionResult<List<Product>>> GetProductsInGenre([FromQuery] string genre, [FromQuery] PageModel model)
+        {
+            try
+            {
+                Query query = new(model.RequestedPage, model.QuantityPerPage, GetQuantityInGenre(genre).Result);
+
+                var products = (await _services.GetAllBooksAsync()).Where(_ => _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase));
+
+                List<Product> result = OrderBy(model, [.. products]);
+                return result.Any() ?
+                     Ok(result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                     NotFound("No record found under requsted condition");
+                
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
@@ -478,6 +501,31 @@ namespace BookShop.API.Controllers
                 return NotFound("No records found");
             }
         }
+
+        //returns all books in genre
+        [HttpGet, Route("books/genre")]
+        public async Task<ActionResult<List<Product>>> GetProductsInGenre([FromQuery] string genre, [FromQuery] PageModel model)
+        {
+            try
+            {
+                Query query = new(model.RequestedPage, model.QuantityPerPage, GetQuantityInGenre(genre).Result);
+
+                var products = (await _services.GetAllBooksAsync()).Where(_ => 
+                _.IsAvailable && 
+                _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase));
+
+                List<Product> result = OrderBy(model, [.. products]);
+                return result.Any() ?
+                     Ok(result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                     NotFound("No record found under requsted condition");
+
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
 
@@ -536,6 +584,45 @@ namespace BookShop.API.Controllers
                 return 0;
             }
         }
+
+        #region of Sorting Methods
+        //MAY RETURN NULL LIST
+        //returns sorted list
+        private List<Product> OrderBy(PageModel model, List<Product> products)
+        {
+            try
+            {
+                if (products.Any())
+                {
+                    List<Product> result = [];
+                    if (model.InAscendingOrder)
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Title)] :
+                            [.. products.OrderBy(_ => _.Price)];
+                    }
+                    else
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Title)] :
+                            [.. products.OrderByDescending(_ => _.Price)];
+                    }
+
+                    return result;
+                }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
+        #endregion
         #endregion
         #endregion
     }
