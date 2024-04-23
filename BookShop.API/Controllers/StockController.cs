@@ -202,6 +202,26 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+        //returns list of ALL books where Title,Author, Language or one of item from array of Genres CONTAINS to searchCondition
+        [HttpGet, Route("books/filter/condition/contains")]
+        public async Task<ActionResult<List<Product>>> GetProductsContainsCondition([FromQuery] string condition, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = await _services.GetBooksContainsConditionAsync(condition, model.InAscendingOrder, model.OrderBy);
+
+                Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
+
+                return products.Any() ?
+                    Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                    NotFound("There nor records found under requested condition");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
@@ -558,6 +578,27 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = (await _services.GetBooksEqualsConditionAsync(condition, model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList();
+
+                Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
+
+                return products.Any() ?
+                    Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                    NotFound("There nor records found under requested condition");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+
+        //returns list of ALL books where Title,Author, Language or one of item from array of Genres CONTAINS to searchCondition
+        [HttpGet, Route("books/filter/condition/contains")]
+        public async Task<ActionResult<List<Product>>> GetProductsContainsCondition([FromQuery] string condition, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = (await _services.GetBooksContainsConditionAsync(condition, model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList();
 
                 Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
 
