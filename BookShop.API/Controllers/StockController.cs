@@ -86,6 +86,23 @@ namespace BookShop.API.Controllers
             }
         }
 
+        //gets a list of Product, where Product.IsAvailable == isAvailable
+        [HttpGet, Route("books/available")]
+        public async Task<ActionResult<Product>> GetProductAvailable([FromQuery]bool isAvailable)
+        {
+            try
+            {
+                var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable == isAvailable).ToList();
+                return products.Any() ? Ok(products) : NotFound("Nor data under requested conditions to display");
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+
+        }
+
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
