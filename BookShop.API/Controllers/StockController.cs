@@ -181,6 +181,28 @@ namespace BookShop.API.Controllers
             }
         }
         #endregion
+        #region of Filtering Methods
+        //returns list of ALL books where Title,Author, Language or one of item from array of Genres EQUALS to searchCondition
+        [HttpGet, Route("books/filter/condition/equals")]
+        public async Task<ActionResult<List<Product>>> GetProductsEqualsCondition([FromQuery]string condition, [FromQuery]PageModel model)
+        {
+            try
+            {
+                var products = await _services.GetBooksEqualsConditionAsync(condition, model.InAscendingOrder, model.OrderBy);
+
+                Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
+
+                return products.Any() ?
+                    Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                    NotFound("There nor records found under requested condition");
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+        #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
         [HttpPost, Route("book/add")]
@@ -519,6 +541,29 @@ namespace BookShop.API.Controllers
                      Ok(result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                      NotFound("No record found under requsted condition");
 
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+        #endregion
+
+        #region of Filtering Methods
+        //returns list of ALL books where Title,Author, Language or one of item from array of Genres EQUALS to searchCondition
+        [HttpGet, Route("books/filter/condition/equals")]
+        public async Task<ActionResult<List<Product>>> GetProductsEqualsCondition([FromQuery] string condition, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = (await _services.GetBooksEqualsConditionAsync(condition, model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList();
+
+                Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
+
+                return products.Any() ?
+                    Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
+                    NotFound("There nor records found under requested condition");
             }
             catch (Exception ex)
             {
