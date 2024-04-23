@@ -222,6 +222,34 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        //Filters the list by each provided parameter in FilterProducts
+        //Exception if FilterProducts.IsAvailable was not specified, then its sets as false
+        //Devides content into pages by parameters requested or auto from PageModel
+        [HttpGet, Route("books/filter/")]
+        public async Task<ActionResult<List<Product>>> GetProductsFilter([FromQuery]FilterProducts filter, [FromQuery]PageModel model)
+        {
+            try
+            {
+                var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
+                List<Product> result = ApplyFilters(products, filter);
+                result = OrderBy(model, result);
+                if(result.Any())
+                {
+                    Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
+                    result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
+                }
+                
+                return result.Any() ? 
+                        Ok(result) : 
+                        NotFound("Nor records found under requested condition");
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
         #region of HttpMethods for manipulations with Collection
@@ -343,6 +371,51 @@ namespace BookShop.API.Controllers
                 Problem(message.ToJson());
         }
 
+        //Applyes FilterProducts to the List<Product>, and returns filtered list
+        //Exception if FilterProducts.IsAvailable was not specified, then its sets as false
+        private List<Product> ApplyFilters(List<Product> products, FilterProducts filter)
+        {
+            try
+            {
+                if(products.Any())
+                {
+                    List<Product> filtered = [.. products];
+
+                    filtered = [.. filtered.Where(product => product.IsAvailable == filter.IsAvailable)];
+
+                    filtered = !string.IsNullOrEmpty(filter.Author) ?
+                        [.. filtered.Where(product => product.Author!.Trim().Contains(filter.Author.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Title) ?
+                        [.. filtered.Where(product => product.Title!.Trim().Contains(filter.Title.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Annotation) ?
+                        [.. filtered.Where(product => product.Annotation!.Trim().Contains(filter.Annotation.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Language) ?
+                        [.. filtered.Where(product => product.Language!.Trim().Contains(filter.Language.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = filter.Genres is not null ?
+                        [.. filtered.Where(product => product.Genres!.Any(genre => filter.Genres!.Any(g => g.Contains(genre, StringComparison.OrdinalIgnoreCase))))] : filtered;
+
+                    filtered = filter.MinPrice > 0 && filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice && product.Price <= filter.MaxPrice)] :
+                        filter.MinPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice)] :
+                        filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price <= filter.MaxPrice)] :
+                        filtered;
+
+                    return filtered;
+                }
+                return [];
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
         #region of Sorting Methods
         //MAY RETURN NULL LIST
         //returns sorted list
@@ -426,6 +499,27 @@ namespace BookShop.API.Controllers
             {
                 LoggError(ex.Message, ex.StackTrace!);
                 return 0;
+            }
+        }
+
+        //Returns total number of pages for method  GetProductsFilter()
+        [HttpGet, Route("books/filter/count")]
+        public async Task<ActionResult<Query>> CountPagesFilter([FromQuery] FilterProducts filter, [FromQuery] PageModel model)
+        {
+            try 
+            {
+                var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
+                if(products.Any())
+                {
+                    Query query = new(model.RequestedPage, model.QuantityPerPage, ApplyFilters(products, filter).Count);
+                    return Ok(query);
+                }
+                return BadRequest("Unable to process your request");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
             }
         }
         #endregion
@@ -612,6 +706,34 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        //Filters the list by each provided parameter in FilterProducts
+        //Exception FilterProducts.IsAvailable always is TRUE
+        //Devides content into pages by parameters requested or auto from PageModel
+        [HttpGet, Route("books/filter/")]
+        public async Task<ActionResult<List<Product>>> GetProductsFilter([FromQuery] FilterProducts filter, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
+                List<Product> result = ApplyFilters(products, filter);
+                result = OrderBy(model, result);
+                if (result.Any())
+                {
+                    Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
+                    result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
+                }
+
+                return result.Any() ?
+                        Ok(result) :
+                        NotFound("Nor records found under requested condition");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
         #endregion
         #endregion
 
@@ -637,6 +759,51 @@ namespace BookShop.API.Controllers
                 Problem(message.ToJson());
         }
 
+        //Applyes FilterProducts to the List<Product>, and returns filtered list
+        //Exception FilterProducts.IsAvailable always is true
+        private List<Product> ApplyFilters(List<Product> products, FilterProducts filter)
+        {
+            try
+            {
+                if (products.Any())
+                {
+                    List<Product> filtered = [.. products];
+
+                    filtered = [.. filtered.Where(product => product.IsAvailable == true)];
+
+                    filtered = !string.IsNullOrEmpty(filter.Author) ?
+                        [.. filtered.Where(product => product.Author!.Trim().Contains(filter.Author.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Title) ?
+                        [.. filtered.Where(product => product.Title!.Trim().Contains(filter.Title.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Annotation) ?
+                        [.. filtered.Where(product => product.Annotation!.Trim().Contains(filter.Annotation.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Language) ?
+                        [.. filtered.Where(product => product.Language!.Trim().Contains(filter.Language.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = filter.Genres is not null ?
+                        [.. filtered.Where(product => product.Genres!.Any(genre => filter.Genres!.Any(g => g.Contains(genre, StringComparison.OrdinalIgnoreCase))))] : filtered;
+
+                    filtered = filter.MinPrice > 0 && filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice && product.Price <= filter.MaxPrice)] :
+                        filter.MinPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice)] :
+                        filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price <= filter.MaxPrice)] :
+                        filtered;
+
+                    return filtered;
+                }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
         #region of count methods
         //returns quantity of all products.isAvailable in database
         [HttpGet, Route("books/count/all")]
@@ -706,6 +873,27 @@ namespace BookShop.API.Controllers
             {
                 LoggError(ex.Message, ex.StackTrace!);
                 return [];
+            }
+        }
+
+        //Returns total number of pages for method  GetProductsFilter()
+        [HttpGet, Route("books/filter/count")]
+        public async Task<ActionResult<Query>> CountPagesFilter([FromQuery] FilterProducts filter, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = (await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList();
+                if (products.Any())
+                {
+                    Query query = new(model.RequestedPage, model.QuantityPerPage, ApplyFilters(products, filter).Count);
+                    return Ok(query);
+                }
+                return BadRequest("Unable to process your request");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
             }
         }
         #endregion
