@@ -348,6 +348,21 @@ namespace BookShop.API.Controllers
                 return 0;
             }
         }
+
+        [HttpGet, Route("books/count/ingenre")]
+        public async Task<int> GetQuantityInGenre([FromQuery]string genre)
+        {
+            try
+            {
+                int quantity = (await _services.GetAllBooksAsync()).Where(_ => _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase)).Count();
+                return quantity;
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return 0;
+            }
+        }
         #endregion
         #endregion
     }
@@ -501,6 +516,23 @@ namespace BookShop.API.Controllers
             catch (Exception ex)
             {
                 LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return 0;
+            }
+        }
+
+        [HttpGet, Route("books/count/ingenre")]
+        public async Task<int> GetQuantityInGenre([FromQuery] string genre)
+        {
+            try
+            {
+                int quantity = (await _services.GetAllBooksAsync()).Where(_ => 
+                _.IsAvailable && 
+                _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase)).Count();
+                return quantity;
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
                 return 0;
             }
         }
