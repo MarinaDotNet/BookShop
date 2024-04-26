@@ -38,6 +38,14 @@ builder.Services.AddCors(options =>
         .DisallowCredentials()
         .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
     });
+    options.AddPolicy("MyPolicyForGuest", policy =>
+    {
+        policy
+        .WithHeaders([ApiConstants.ApiVersionHeader + " : 3"])
+        .WithMethods("GET", "OPTIONS")
+        .DisallowCredentials()
+        .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
+    });
 });
 builder.Services
     .AddApiVersioning(options =>
