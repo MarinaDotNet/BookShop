@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
+using BookShop.WebApplication.Services;
 
 namespace BookShop.WebApplication.Areas.Identity.Pages.Account
 {
@@ -22,11 +24,17 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ILogger<LoginModel> _logger;
-
-        public LoginModel(SignInManager<ApplicationUser> signInManager, ILogger<LoginModel> logger)
+        private IMemoryCache _tokenCache;
+        private readonly IConfiguration _configuration;
+        public LoginModel(SignInManager<ApplicationUser> signInManager, 
+            ILogger<LoginModel> logger, 
+            IMemoryCache tokenCache, 
+            IConfiguration configuration)
         {
             _signInManager = signInManager;
             _logger = logger;
+            _tokenCache = tokenCache;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -116,6 +124,12 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
                 if (result.Succeeded)
                 {
                     _logger.LogInformation("User logged in.");
+
+                    //Generating token for siging in user and storing it in cache memory
+                    TokenGenerator token = new();
+                    token.Generate(Input.Email, _configuration);
+                    _tokenCache.Set("token", token);
+
                     return LocalRedirect(returnUrl);
                 }
                 if (result.RequiresTwoFactor)
