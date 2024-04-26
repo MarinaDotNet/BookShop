@@ -16,6 +16,8 @@ namespace BookShop.API.Controllers
     [ApiController]
     [ApiVersion("1")]
     [Route("authorization/")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
     public class AuthenticationV1Controller(UserManager<ApiUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, ILogger<AuthenticationV1Controller> logger) : ControllerBase
     {
         private readonly UserManager<ApiUser> _userManager = userManager;
@@ -37,7 +39,7 @@ namespace BookShop.API.Controllers
         #endregion
 
         [HttpPost, Route("loging")]
-        public async Task<ActionResult> Login([FromForm]LoginModel model)
+        public async Task<ActionResult> Login([FromBody]LoginModel model)
         {
             try
             {
@@ -89,7 +91,7 @@ namespace BookShop.API.Controllers
         }
 
         [HttpPost, Route("register")]
-        public async Task<ActionResult> Register([FromForm]RegisterModel model)
+        public async Task<ActionResult> Register([FromBody] RegisterModel model)
         {
             try
             {
@@ -156,7 +158,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
         [Authorize(Roles = ApiConstants.Admin)]
         [HttpPut, Route("password/reset/foranother")]
-        public async Task<ActionResult> PasswordUpdate([FromForm]PasswordResetForAccountModel model)
+        public async Task<ActionResult> PasswordUpdate([FromBody] PasswordResetForAccountModel model)
         {
             try
             {
@@ -205,7 +207,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
         [Authorize(Roles = ApiConstants.Admin)]
         [HttpPut, Route("password/reset")]
-        public async Task<ActionResult> PasswordUpdateCurrentUser([FromForm] PasswordResetModel model)
+        public async Task<ActionResult> PasswordUpdateCurrentUser([FromBody] PasswordResetModel model)
         {
             try
             {
@@ -254,7 +256,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
         [Authorize(Roles = ApiConstants.Admin)]
         [HttpDelete, Route("account/delete")]
-        public async Task<ActionResult> RemoveUser([FromForm]DeleteModel model)
+        public async Task<ActionResult> RemoveUser([FromBody] DeleteModel model)
         {
             try
             {
@@ -300,7 +302,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForAdmin")]
         [Authorize(Roles = ApiConstants.Admin)]
         [HttpDelete, Route("account/delete/anotheruser")]
-        public async Task<ActionResult> DeleteAccount([FromForm]DeleteAccountModel model)
+        public async Task<ActionResult> DeleteAccount([FromBody] DeleteAccountModel model)
         {
             try
             {
@@ -342,6 +344,8 @@ namespace BookShop.API.Controllers
     [ApiController]
     [ApiVersion("2")]
     [Route("authorization/")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
     public class AuthenticationV2Controller(UserManager<ApiUser> userManager, RoleManager<IdentityRole> roleManager, IConfiguration configuration, ILogger<AuthenticationV2Controller> logger) : ControllerBase
     {
         private readonly UserManager<ApiUser> _userManager = userManager;
@@ -363,7 +367,7 @@ namespace BookShop.API.Controllers
         #endregion
 
         [HttpPost, Route("loging")]
-        public async Task<ActionResult> Login([FromForm] LoginModel model)
+        public async Task<ActionResult> Login([FromBody] LoginModel model)
         {
             try
             {
@@ -411,7 +415,7 @@ namespace BookShop.API.Controllers
         }
 
         [HttpPost, Route("register")]
-        public async Task<ActionResult> Register([FromForm] RegisterModel model)
+        public async Task<ActionResult> Register([FromBody] RegisterModel model)
         {
             try
             {
@@ -474,7 +478,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForUser")]
         [Authorize]
         [HttpPut, Route("password/reset")]
-        public async Task<ActionResult> PasswordUpdateCurrentUser([FromForm] PasswordResetModel model)
+        public async Task<ActionResult> PasswordUpdateCurrentUser([FromBody] PasswordResetModel model)
         {
             try
             {
@@ -525,7 +529,7 @@ namespace BookShop.API.Controllers
         [EnableCors(PolicyName = "MyPolicyForUser")]
         [Authorize]
         [HttpDelete, Route("account/delete")]
-        public async Task<ActionResult> RemoveUser([FromForm] DeleteModel model)
+        public async Task<ActionResult> RemoveUser([FromBody] DeleteModel model)
         {
             try
             {
