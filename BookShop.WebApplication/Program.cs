@@ -1,4 +1,12 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using BookShop.WebApplication.Data;
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("BookShopWebApplicationContextConnection") ?? throw new InvalidOperationException("Connection string 'BookShopWebApplicationContextConnection' not found.");
+
+builder.Services.AddDbContext<BookShopWebApplicationContext>(options => options.UseSqlServer(connectionString));
+
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true).AddEntityFrameworkStores<BookShopWebApplicationContext>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
