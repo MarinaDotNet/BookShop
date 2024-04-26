@@ -900,4 +900,180 @@ namespace BookShop.API.Controllers
         #endregion
         #endregion
     }
+
+    [ApiController]
+    [ApiVersion("3")]
+    [Produces("application/json")]
+    [Consumes("application/json")]
+    [EnableCors(PolicyName = "MyPolicyForGuest")]
+    public class StockV3Controller(StockDBServices services, ILogger<StockV3Controller> logger) : ControllerBase
+    {
+        private readonly StockDBServices _services = services;
+        private readonly ILogger<StockV3Controller> _logger = logger;
+
+        //return all genres in database
+        [HttpGet, Route("books/genres")]
+        public async Task<ActionResult<List<string>>> GetAllGenres()
+        {
+            try
+            {
+                var products = await _services.GetAllBooksAsync();
+                if (products.Any())
+                {
+                    List<string> genres = [];
+
+                    foreach (var product in products)
+                    {
+                        if (product.Genres.Any() && product.IsAvailable)
+                        {
+                            genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
+                        }
+                    }
+                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                }
+                else return NotFound("No record found");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return NotFound("No records found");
+            }
+        }
+
+        //Filters the list by each provided parameter in FilterProducts
+        //Exception FilterProducts.IsAvailable always is TRUE
+        //Devides content into pages by parameters requested or auto from PageModel
+        [HttpGet, Route("books/filter/")]
+        public async Task<ActionResult<List<Product>>> GetProductsFilter([FromQuery] FilterProducts filter, [FromQuery] PageModel model)
+        {
+            try
+            {
+                var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
+                List<Product> result = ApplyFilters(products, filter);
+                result = OrderBy(model, result);
+                if (result.Any())
+                {
+                    Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
+                    result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
+                }
+
+                return result.Any() ?
+                        Ok(result) :
+                        NotFound("Nor records found under requested condition");
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+
+        #region Of Help Methods
+        private ActionResult LoggError(string errorMessage, string errorStackTrace)
+        {
+            _logger.LogError(message: errorMessage, args: errorStackTrace);
+            return Problem(errorMessage.ToJson());
+        }
+        private void LoggInfo(int statusCode, string message) =>
+            _logger.LogInformation(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private void LogingWarning(int statusCode, string message) =>
+            _logger.LogWarning(message: message + ", DateTime: {@DateTime}, StatusCode: {@statusCode}", DateTime.Now, statusCode);
+        private ActionResult Warning(string message, int statusCode)
+        {
+            LogingWarning(statusCode, message);
+            return statusCode == (int)HttpStatusCode.Unauthorized ?
+                Unauthorized(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.NotFound ?
+                NotFound(message.ToJson()) :
+                statusCode == (int)HttpStatusCode.BadRequest ?
+                BadRequest(message.ToJson()) :
+                Problem(message.ToJson());
+        }
+
+        //Applyes FilterProducts to the List<Product>, and returns filtered list
+        //Exception FilterProducts.IsAvailable always is TRUE
+        private List<Product> ApplyFilters(List<Product> products, FilterProducts filter)
+        {
+            try
+            {
+                if (products.Any())
+                {
+                    List<Product> filtered = [.. products];
+
+                    filtered = [.. filtered.Where(product => product.IsAvailable == true)];
+
+                    filtered = !string.IsNullOrEmpty(filter.Author) ?
+                        [.. filtered.Where(product => product.Author!.Trim().Contains(filter.Author.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Title) ?
+                        [.. filtered.Where(product => product.Title!.Trim().Contains(filter.Title.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Annotation) ?
+                        [.. filtered.Where(product => product.Annotation!.Trim().Contains(filter.Annotation.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = !string.IsNullOrEmpty(filter.Language) ?
+                        [.. filtered.Where(product => product.Language!.Trim().Contains(filter.Language.Trim(), StringComparison.OrdinalIgnoreCase))] : filtered;
+
+                    filtered = filter.Genres is not null ?
+                        [.. filtered.Where(product => product.Genres!.Any(genre => filter.Genres!.Any(g => g.Contains(genre, StringComparison.OrdinalIgnoreCase))))] : filtered;
+
+                    filtered = filter.MinPrice > 0 && filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice && product.Price <= filter.MaxPrice)] :
+                        filter.MinPrice > 0 ?
+                        [.. filtered.Where(product => product.Price >= filter.MinPrice)] :
+                        filter.MaxPrice > 0 ?
+                        [.. filtered.Where(product => product.Price <= filter.MaxPrice)] :
+                        filtered;
+
+                    return filtered;
+                }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
+        //MAY RETURN NULL LIST
+        //returns sorted list
+        private List<Product> OrderBy(PageModel model, List<Product> products)
+        {
+            try
+            {
+                if (products.Any())
+                {
+                    List<Product> result = [];
+                    if (model.InAscendingOrder)
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderBy(_ => _.Title)] :
+                            [.. products.OrderBy(_ => _.Price)];
+                    }
+                    else
+                    {
+                        result = model.OrderBy.Equals("author", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Author)] :
+                            model.OrderBy.Equals("title", StringComparison.OrdinalIgnoreCase) ?
+                            [.. products.OrderByDescending(_ => _.Title)] :
+                            [.. products.OrderByDescending(_ => _.Price)];
+                    }
+
+                    return result;
+                }
+                return [];
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return [];
+            }
+        }
+
+        #endregion
+    }
+
+
 }
