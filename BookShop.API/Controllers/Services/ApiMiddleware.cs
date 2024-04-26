@@ -36,7 +36,7 @@ namespace BookShop.API.Controllers.Services
                 }
 
                 if (!decimal.TryParse(context.Request.Headers[ApiConstants.ApiVersionHeader], out decimal version) ||
-                    version != 1 && version != 2)
+                    version != 1 && version != 2 && version != 3)
                 {
                     LogError((int)HttpStatusCode.ExpectationFailed, context);
                     return;
