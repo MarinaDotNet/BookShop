@@ -1,8 +1,38 @@
 ﻿@{
     ViewData["Title"] = "Home Page";
 }
+ @model ProductViewModel
+<form> 
+    <div class="text-center">
+        <h1 class="display-4">You are welcome to our Book Shop</h1>
+    </div>
+  <div class="row">
+      @if(Model.Products is not null)
+        {
+            
+        
+        @foreach (Product book in Model.Products)
+        {
+          <div class="col-sm-4">
+                <div class="card text-white bg-secondary border-primary mb-3">
+                    <h5 class="card-header" title="Book Title" style="height: 7rem;">@book.Title</h5>
+                    <img class="card-img-top align-self-center" src="https://cdn.pixabay.com/photo/2016/03/31/18/27/book-1294379_1280.png" alt="image of book" style="width: 18rem;" />
+                     <div class="card-body">
+                        <h5 class="card-title" title="Book Author">@book.Author</h5>
+                        <h4 class="card-title" title="Price">$@book.Price</h4>
+                            <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                    </div>
+                    <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
+                        @foreach (string genre in book.Genres!)
+                        {
+                            <a class="card-link text-light text-nowrap" href="#">@genre</a>
+                        }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+                    </div> 
+                </div>
+
+        </div>
+        }
+        }
+    </div>
+</form>
