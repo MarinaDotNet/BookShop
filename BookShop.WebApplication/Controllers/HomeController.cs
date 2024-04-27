@@ -13,6 +13,7 @@ namespace BookShop.WebApplication.Controllers
         private IMemoryCache _tokenCache;
         private readonly HttpClient _httpClient = new();
         private readonly IConfiguration _configuration;
+        private ProductViewModel _productViewModel = new();
         public HomeController(ILogger<HomeController> logger, 
             IMemoryCache tokenCache,
             IConfiguration configuration)
@@ -38,7 +39,19 @@ namespace BookShop.WebApplication.Controllers
 
         public IActionResult Index()
         {
-            return View();
+            try
+            {
+                _productViewModel.Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(new UrlStockRoute().GetFiveMostExpensiveProducts).Result!;
+
+                return _productViewModel.Products.Any() ?
+                    View(_productViewModel) :
+                    Error();
+            }
+            catch
+            {
+                return Error();
+            }
+
         }
 
         public IActionResult Privacy()
