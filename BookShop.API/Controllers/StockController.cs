@@ -968,6 +968,23 @@ namespace BookShop.API.Controllers
             }
         }
 
+        [HttpGet, Route("book/id")]
+        public async Task<ActionResult<Product>> GetProductById([FromQuery]/*[StringLength(20)]*/ string id)
+        {
+            try
+            {
+                var product = (await _services.GetBookByIdAsync(id));
+                return product is null || !product.IsAvailable ?
+                    NotFound("There no product found under entered requirements") :
+                    Ok(product);
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message.ToString(), ex.StackTrace!);
+                return Problem(ex.Message);
+            }
+        }
+
         #region Of Help Methods
         private ActionResult LoggError(string errorMessage, string errorStackTrace)
         {
