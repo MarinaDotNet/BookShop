@@ -1,6 +1,7 @@
 using BookShop.WebApplication.Models;
 using BookShop.WebApplication.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using System.Diagnostics;
 using System.Net.Http.Headers;
@@ -63,6 +64,41 @@ namespace BookShop.WebApplication.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        public IActionResult Details(string id)
+        {
+            try
+            {
+                if (id is not null)
+                {
+                    var queryData = new Dictionary<string, string> { ["id"] = id };
+
+                    Uri url = new (QueryHelpers.AddQueryString(new UrlStockRoute().GetProductById.ToString(), queryData!));
+
+                    _productViewModel.Product = _httpClient.GetFromJsonAsync<Product>(url).Result!;
+
+                    return _productViewModel.Product is null ? Error() : View(_productViewModel);
+                }
+                else
+                {
+                    return Error();
+                }
+            }
+            catch
+            {
+                return Error();
+            }
+        }
+
+        public IActionResult AddToOrder(string id)
+        {
+            return View();
+        }
+
+        public IActionResult More()
+        {
+            return View();
         }
     }
 }
