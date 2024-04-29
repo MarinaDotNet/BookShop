@@ -118,32 +118,32 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
 
             if (ModelState.IsValid)
             {
-                // This doesn't count login failures towards account lockout
-                // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-                var result = await _signInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
-                if (result.Succeeded)
+                var user = await _signInManager.UserManager.FindByEmailAsync(Input.Email);
+                if (user is not null)
                 {
-                    _logger.LogInformation("User logged in.");
+                    // This doesn't count login failures towards account lockout
+                    // To enable password failures to trigger account lockout, set lockoutOnFailure: true
+                    var result = await _signInManager.PasswordSignInAsync(user.UserName, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+                    if (result.Succeeded)
+                    {
+                        _logger.LogInformation("User logged in.");
 
-                    //Generating token for siging in user and storing it in cache memory
-                    TokenGenerator token = new();
-                    token.Generate(Input.Email, _configuration);
-                    _tokenCache.Set("token", token);
+                        //Generating token for siging in user and storing it in cache memory
+                        TokenGenerator token = new();
+                        token.Generate(Input.Email, _configuration);
+                        _tokenCache.Set("token", token);
 
-                    return LocalRedirect(returnUrl);
-                }
-                if (result.RequiresTwoFactor)
-                {
-                    return RedirectToPage("./LoginWith2fa", new { ReturnUrl = returnUrl, RememberMe = Input.RememberMe });
-                }
-                if (result.IsLockedOut)
-                {
-                    _logger.LogWarning("User account locked out.");
-                    return RedirectToPage("./Lockout");
+                        return LocalRedirect(returnUrl);
+                    }
+                    else
+                    {
+                        ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                        return Page();
+                    }
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Invalid login attempt.\nAccount not found.");
                     return Page();
                 }
             }
