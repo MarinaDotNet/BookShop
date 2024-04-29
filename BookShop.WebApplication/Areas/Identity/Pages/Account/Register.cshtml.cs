@@ -71,6 +71,9 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
         /// </summary>
         public class InputModel
         {
+            [Required]
+            [Display(Name ="User Login")]
+            public string UserLogin { get; set; }
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
             ///     directly from your code. This API may change or be removed in future releases.
@@ -79,6 +82,12 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
             [EmailAddress]
             [Display(Name = "Email")]
             public string Email { get; set; }
+
+            [Required]
+            [EmailAddress]
+            [Display(Name = "Confirm Email")]
+            [Compare("Email", ErrorMessage = "The email and confirmation email do not match.")]
+            public string ConfirmEmail { get; set; }
 
             /// <summary>
             ///     This API supports the ASP.NET Core Identity default UI infrastructure and is not intended to be used
@@ -113,9 +122,22 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
             if (ModelState.IsValid)
             {
+                var isExistEmail = await _userManager.FindByEmailAsync(Input.Email);
+                var isExistsUserName = await _userManager.FindByNameAsync(Input.UserLogin);
+                if (isExistEmail is not null || isExistsUserName is not null)
+                {
+                    string error = isExistEmail is null && isExistsUserName is not null ?
+                        "Account with this login already exists. User login should be unique." :
+                        isExistsUserName is null && isExistEmail is not null ?
+                        "Account with this email already exists." :
+                        "Account with entered data already exists. Please Log in or request to reset Password";
+                    ModelState.AddModelError(string.Empty, error);
+                    return Page();
+                }
+
                 var user = CreateUser();
 
-                await _userStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+                await _userStore.SetUserNameAsync(user, Input.UserLogin, CancellationToken.None);
                 await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
