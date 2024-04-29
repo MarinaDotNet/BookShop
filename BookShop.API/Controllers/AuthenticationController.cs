@@ -43,7 +43,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(model.UserLogin);
+                var user = await _userManager.FindByEmailAsync(model.UserEmail);
                 if(user is not null && await _userManager.CheckPasswordAsync(user, model.Password))
                 {
                     var userRoles = await _userManager.GetRolesAsync(user);
@@ -81,7 +81,7 @@ namespace BookShop.API.Controllers
                     });
                 }
 
-                return Warning(user is null ? "Not registrated user:'" + model.UserLogin + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
+                return Warning(user is null ? "Not registrated user:'" + model.UserEmail + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
             }
             catch (Exception ex)
             {
@@ -371,7 +371,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                var user = await _userManager.FindByNameAsync(model.UserLogin);
+                var user = await _userManager.FindByEmailAsync(model.UserEmail);
                 if (user is not null && await _userManager.CheckPasswordAsync(user, model.Password))
                 {
                     var userRoles = await _userManager.GetRolesAsync(user);
@@ -405,7 +405,7 @@ namespace BookShop.API.Controllers
                     });
                 }
 
-                return Warning(user is null ? "Not registrated user:'" + model.UserLogin + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
+                return Warning(user is null ? "Not registrated user:'" + model.UserEmail + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
             }
             catch (Exception ex)
             {
