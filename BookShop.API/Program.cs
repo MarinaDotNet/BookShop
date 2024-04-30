@@ -12,6 +12,8 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Configuration.AddUserSecrets<StartupBase>();
+
 // Add services to the container.
 builder.Services.Configure<ProductDatabaseSettings>(builder.Configuration.GetSection("ConnectionMongoStock"));
 builder.Services.AddSingleton<StockDBServices>();
