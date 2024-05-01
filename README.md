@@ -30,7 +30,7 @@ Mongo Atlas Shared Replica set contains all data about books library.
 
 ### About Local SQL:
 SQL used for Authentication and Authorization for API and to store Orders details for each user. <br>
-Added custom table dbo.Orders:
+This project uses the standart ASP.NET Identity tables. Only was added custom table dbo.Orders:
 | Order | Key | Data Type | Value |
 | ----- | --- | --------- | ----- |
 | OrderId | PK | nvarchar(450) | not null |
