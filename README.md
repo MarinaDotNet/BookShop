@@ -1,31 +1,27 @@
-# Web API with ASP.NET Core.
+# BookShop Project contains:
+## BookShop.API - Web API and BookShop.Application - Web Application
+Before starting BookShop.Application first needs to be ensure that BookShop.API is running, because BookShop.Application depends on BookShop.API
 
-<p>HTTP controller-based API for e-comerce Book Store website that uses Mongo Atlas shared Replica Set database for retriving products(books information) and local SQL (localdb)\MSSQLLocalDB Server for user accounts and orders.</p>
+## Web API with ASP.NET Core.
+HTTP controller-based API for e-comerce Book Store website that uses Mongo Atlas shared Replica Set database for retriving products(books information) and local SQL (localdb)\MSSQLLocalDB Server for user accounts and orders.<br/>
+Requiers internet connection and SQL Server (localdb)\MSSQLLocalDB with out password.
 
-<p>On runing device requiers internet connection and SQL Server (localdb)\MSSQLLocalDB with out password.</p>
-
-
-  ## About API:
+  ### About API:
   Async methods in API, providing the ability to handle several concurrent HTTP requests. They are not blocking the main thread while waiting for the database response. <br>
   This API consumes and produces data in Json format, because this format is simple and lightweighted.
- ### Current API supports 2 API-Versions.
-   First API-Version is for Admin access only.<br>
-  Second API-Version for User's  access.
+ #### Current API supports 3 API-Versions.
+  First API-Version is for Admin access only.<br>
+  Second API-Version for User's  access. <br/>
+  Third API-Version for not Signed in users, for guests.
 
-## About Mongo Atlas Database:
+### About Mongo Atlas Database:
 Mongo Atlas Shared Replica set contains all data about books library.
-  ### Some pross of NoSQL databases
-In NoSQL databases data is stored in a more freeform, without rigid schemas, that makes NoSQL more flexible than SQL.<br>
-In case of increase in traffic there is no need to add additional servers for scaling, there is enough hardware for this. NoSQL has high performance as data or traffic increases due to its scalable architecture. NoSQL database can automatically duplicate data across multiple servers, data centers or cloud resources. This benefit helps to minimize latency for users. It also reduces the load on database management.
-
-  ## About Local SQL:
+### About Local SQL:
 SQL used for Authentication and Authorization for API and to store Orders details for each user. <br>
-Previously for it was used Azure SQL, but was decided to change it to local SQL(still looking for better solution), because of too high cost for Azure Services.
 
-## About API Security:
+### About API Security:
 All session tokens, api version, api-key and user token sends as Headers.
-To use API-Version:2, don't need to provide JWT token, api-key and user data. But API-Version:2 only supports some GET methods.
-Just required to specify API-Version:2.
+To use API-Version:2 and API-Version:3, don't need to provide JWT token. But this versions only supports some GET methods from StockController.cs and POST methods from AuthenticationConroller.cs. The list of all methods and supporting API-Version for each method could be found at the end of this page. <br/>
 API-Version:1 supports all methods of API (GET, POST, PUT, DELETE), for access to it requires: api-key and valid JWT token.
 To JWT token, required provide api-key and correct admin loging details, after thet API will generate JWT token that valid for 1 hour.
 Also there ability to create own administration acccount, for that only required to provide api-key.
@@ -69,7 +65,71 @@ Also there ability to create own administration acccount, for that only required
       <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
       <td>Requires to be signed in and provide correct current password for this account.</td>
     </tr>
-  
+   <tr>
+      <td>DELETE/authorization/account/delete/anotheruser</td>
+      <td>Deletes an account</td>
+      <td>ApiVersion-BooksStore: 1</td>
+      <td>Required to be signed in as admin and to provide correct data for account that needs to be deleted.</td>
+    </tr>
+  <tr><td colspan="4">OrderV Controller</td><tr>
+  <tr>
+    <td>POST/order</td>
+    <td>Creates new order if user signed in and doesn't have currently unsubmitted orders.</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Required to be signed in and have unsubmitted orders</td>
+  </tr>
+  <tr>
+    <td>PUT/order/products/add</td>
+    <td>Adds products to existing order</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Required to provide valid product/products id, that currently is available at database and valid order id.<br/>
+      Adds products if current order exists in database for currently signed in user and not submitted yet.</td>
+  </tr>
+  <tr>
+    <td>PUT/order/products/delete</td>
+    <td>Deletes products from existing order for currently signed in user</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Requered to provide order id and product id<br/>
+      Deletes requested product/products from order, if current order exists in database for currently signed in user and not submitted yet.</td>
+  </tr>
+  <tr>
+    <td>PUT/order/submit</td>
+    <td>Submits order</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Required to be signed in and provide valid (for currently signed in user) and valid order id, currently unsubmitted.</td>
+  </tr>
+   <tr>
+    <td>PUT/order/submit</td>
+    <td>Submits order</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Required to be signed in and provide valid (for currently signed in user) and valid order id.<br/>
+      Order shoud be unsubmitted and have at least one valid product in it.</td>
+  </tr>
+   <tr>
+    <td>PUT/account/order/unsubmit</td>
+    <td>Unsubmits order</td>
+    <td>ApiVersion-BooksStore: 1</td>
+    <td>Required to be signed in as admin and provide existing order id. Available access to all orders in database(for any user)<br/>
+      Order shoud not be submitted.</td>
+  </tr>
+   <tr>
+    <td>PUT/order/details</td>
+    <td>Gets requested order details</td>
+    <td>ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2</td>
+    <td>Required to be signed in and provide order id. If signed in as admin can access to any order in database, if signed in as user can access only own orders.</td>
+  </tr>
+  <tr>
+    <td>PUT/order/all</td>
+    <td>Gets all orders for currently signed in user.</td>
+    <td>ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2</td>
+    <td>Required to be signed in. Gets only own orders for signed in user.</td>
+  </tr>
+   <tr>
+    <td>DELETE/order/delete</td>
+    <td>Deletes requested order.</td>
+    <td>ApiVersion-BooksStore: 1</td>
+    <td>Required to be signed in as admin. Deletes any existing order.</td>
+  </tr>
   <tr><td colspan="4">StockV Controller</td><tr>
   <tr>
     <td>GET/books/all</td>
