@@ -26,58 +26,24 @@ API-Version:1 supports all methods of API (GET, POST, PUT, DELETE), for access t
 To JWT token, required provide api-key and correct admin loging details, after thet API will generate JWT token that valid for 1 hour.
 Also there ability to create own administration acccount, for that only required to provide api-key.
 
+## AuthenticationV Controller:
+| API: | Description: | API Version: | Additional Notes: |
+| ---- | ------------ | ------------ | ----------------- |
+| POST/authorization/loging | Singing in existing account and provides token.<br><br>**Default Administration account**:<br>"UserLogin: admin"<br>"Password: P@ssw0rd"<br>**Default User account**:<br>"UserLogin: user"<br>"Password: P@ssw0rd" | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | ApiVersion-BooksStore: 1, supports only to sign under administration accounts |
+| POST/authorization/register | Registering new account.<br><br>If specified API-Version is 'ApiVersion-BooksStore: 1' registrated account automatically adds admin role. <br>If specified API-Version is 'ApiVersion-BooksStore: 2' registrated account automatically adds only user role. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Requires unique username, unique email, and password. |
+| PUT/authorization/password/reset/foranother | Resets password for any account | ApiVersion-BooksStore: 1 | Requieres: to be signed in under admin account.<br>Has to provide: correct registrated email and correct current password for this account and new password |
+| POST/authorization/password/reset | Resets password for currently signed in account | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Requires to be signed in and provide correct current password for this account. |
+| DELETE/authorization/account/delete | >Deletes currently signed in account | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Requires to be signed in and provide correct current password for this account. |
+| DELETE/authorization/account/delete/anotheruser | Deletes an account | ApiVersion-BooksStore: 1 | Required to be signed in as admin and to provide correct data for account that needs to be deleted. |
+
+## OrderV Controller:
+| API: | Description: | API Version: | Additional Notes: |
+| ---- | ------------ | ------------ | ----------------- |
+| POST/order | Creates new order if user signed in and doesn't have currently unsubmitted orders. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in and have unsubmitted orders |
+
+
+
 <table>
-  <thead><td>API:</td><td>Description:</td><td>API Version<br>()</td><td>Additional Notes:</td></thead>
-  <tr><td colspan="4">AuthenticationV Controller:</td></tr>
-    <tr>
-      <td>POST/authorization/loging</td>
-      <td>Singing in existing administration account and provides token.<br>
-        Default Administration account:<br>UserLogin: admin<br>Password: P@ssw0rd<br>
-        Default User account:<br>UserLogin: user<br>Password: P@ssw0rd</td>
-      <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-      <td>ApiVersion-BooksStore: 1, supports only to sign under administration accounts</td>
-    </tr>
-    <tr>
-      <td>POST/authorization/register</td>
-      <td>Registering new account.<br>
-        If specified API-Version is 'ApiVersion-BooksStore: 1' registrated account automatically adds admin role.<br>
-        If specified API-Version is 'ApiVersion-BooksStore: 2' registrated account automatically adds only user role.
-       </td>
-      <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-      <td>Requires unique username, unique email, and password.</td>
-    </tr>
-    <tr>
-      <td>PUT/authorization/password/reset/foranother</td>
-      <td>Resets password for any account</td>
-      <td>ApiVersion-BooksStore: 1</td>
-      <td>Requieres: to be signed in under admin account<br>
-      Has to provide: correct registrated email and correct current password for this account and new password</td>
-    </tr>
-    <tr>
-      <td>POST/authorization/password/reset</td>
-      <td>Resets password for currently signed in account</td>
-      <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-      <td>Requires to be signed in and provide correct current password for this account.</td>
-    </tr>
-    <tr>
-      <td>DELETE/authorization/account/delete</td>
-      <td>Deletes currently signed in account</td>
-      <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-      <td>Requires to be signed in and provide correct current password for this account.</td>
-    </tr>
-   <tr>
-      <td>DELETE/authorization/account/delete/anotheruser</td>
-      <td>Deletes an account</td>
-      <td>ApiVersion-BooksStore: 1</td>
-      <td>Required to be signed in as admin and to provide correct data for account that needs to be deleted.</td>
-    </tr>
-  <tr><td colspan="4">OrderV Controller</td><tr>
-  <tr>
-    <td>POST/order</td>
-    <td>Creates new order if user signed in and doesn't have currently unsubmitted orders.</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Required to be signed in and have unsubmitted orders</td>
-  </tr>
   <tr>
     <td>PUT/order/products/add</td>
     <td>Adds products to existing order</td>
@@ -138,7 +104,7 @@ Also there ability to create own administration acccount, for that only required
     <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true</td>
   </tr>
    <tr>
-    <td> <a name="name_of_target" id="name_of_target">GET/books/page</td>
+    <td> <a id="GET/books/page"> GET/books/page </a></td>
     <td>Returns a list of requested products for requested page</td>
     <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
     <td>Returns list of requested quantity of products for requested page.<br/>
@@ -165,7 +131,7 @@ Also there ability to create own administration acccount, for that only required
     <td>GET/books/available/page</td>
     <td>Returns list of products where parameter isAvailable equals requested true or false, at requested page with requested quantity.</td>
     <td>ApiVersion-BooksStore: 1</td>
-    <td>Deviding content into pages as in: <a href="name_of_target">GET/books/page</a></td>
+    <td>Deviding content into pages as in: <a href=(#GET/books/page)>GET/books/page </a></td>
   </tr>
   <tr>
     <td>GET/books/count/all</td>
