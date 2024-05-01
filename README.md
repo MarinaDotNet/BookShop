@@ -40,81 +40,23 @@ Also there ability to create own administration acccount, for that only required
 | API: | Description: | API Version: | Additional Notes: |
 | ---- | ------------ | ------------ | ----------------- |
 | POST/order | Creates new order if user signed in and doesn't have currently unsubmitted orders. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in and have unsubmitted orders |
+| PUT/order/products/add | Adds products to existing order | piVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to provide valid product/products id, that currently is available at database and valid order id.<br>Adds products if current order exists in database for currently signed in user and not submitted yet. |
+| PUT/order/products/delete | Deletes products from existing order for currently signed in user | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Requered to provide order id and product id<br>Deletes requested product/products from order, if current order exists in database for currently signed in user and not submitted yet. |
+| PUT/order/submit | Submits order | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in and provide valid (for currently signed in user) and valid order id, currently unsubmitted. |
+| PUT/order/submit | Submits order | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in and provide valid (for currently signed in user) and valid order id.<br>Order shoud be unsubmitted and have at least one valid product in it. |
+| PUT/account/order/unsubmit | Unsubmits order | ApiVersion-BooksStore: 1 | Required to be signed in as admin and provide existing order id. Available access to all orders in database(for any user)<br>Order shoud not be submitted. |
+| PUT/order/details | Gets requested order details | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in and provide order id. If signed in as admin can access to any order in database, if signed in as user can access only own orders. |
+| PUT/order/all | Gets all orders for currently signed in user. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Required to be signed in. Gets only own orders for signed in user. |
+| DELETE/order/delete | Deletes requested order. | ApiVersion-BooksStore: 1 | Required to be signed in as admin. Deletes any existing order.|
 
+## StockV Controller:
+| API: | Description: | API Version: | Additional Notes: |
+| ---- | ------------ | ------------ | ----------------- |
+| GET/books/all | Retrieves all data from database. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true |
+| GET/books/page | Returns a list of requested products for requested page | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Returns list of requested quantity of products for requested page.<br>The list is sorted in requested order, by requested parameter(by Title or by Author or by Price).<br>If not specified sorting order && parameter for order, then its uses default parameters: descending order by Price.<br>If requested page < 1, then returns page 1, if requested page is larger then total pages, then returns last page.<br>The requested quantity of products per page should be in range 5 to 30. If requested quantity < 5 returns 5 products, if > 30 returns 30.<br>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true |
 
 
 <table>
-  <tr>
-    <td>PUT/order/products/add</td>
-    <td>Adds products to existing order</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Required to provide valid product/products id, that currently is available at database and valid order id.<br/>
-      Adds products if current order exists in database for currently signed in user and not submitted yet.</td>
-  </tr>
-  <tr>
-    <td>PUT/order/products/delete</td>
-    <td>Deletes products from existing order for currently signed in user</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Requered to provide order id and product id<br/>
-      Deletes requested product/products from order, if current order exists in database for currently signed in user and not submitted yet.</td>
-  </tr>
-  <tr>
-    <td>PUT/order/submit</td>
-    <td>Submits order</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Required to be signed in and provide valid (for currently signed in user) and valid order id, currently unsubmitted.</td>
-  </tr>
-   <tr>
-    <td>PUT/order/submit</td>
-    <td>Submits order</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Required to be signed in and provide valid (for currently signed in user) and valid order id.<br/>
-      Order shoud be unsubmitted and have at least one valid product in it.</td>
-  </tr>
-   <tr>
-    <td>PUT/account/order/unsubmit</td>
-    <td>Unsubmits order</td>
-    <td>ApiVersion-BooksStore: 1</td>
-    <td>Required to be signed in as admin and provide existing order id. Available access to all orders in database(for any user)<br/>
-      Order shoud not be submitted.</td>
-  </tr>
-   <tr>
-    <td>PUT/order/details</td>
-    <td>Gets requested order details</td>
-    <td>ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2</td>
-    <td>Required to be signed in and provide order id. If signed in as admin can access to any order in database, if signed in as user can access only own orders.</td>
-  </tr>
-  <tr>
-    <td>PUT/order/all</td>
-    <td>Gets all orders for currently signed in user.</td>
-    <td>ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2</td>
-    <td>Required to be signed in. Gets only own orders for signed in user.</td>
-  </tr>
-   <tr>
-    <td>DELETE/order/delete</td>
-    <td>Deletes requested order.</td>
-    <td>ApiVersion-BooksStore: 1</td>
-    <td>Required to be signed in as admin. Deletes any existing order.</td>
-  </tr>
-  <tr><td colspan="4">StockV Controller</td><tr>
-  <tr>
-    <td>GET/books/all</td>
-    <td>Retrieves all data from database.</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true</td>
-  </tr>
-   <tr>
-    <td> <a id="GET/books/page"> GET/books/page </a></td>
-    <td>Returns a list of requested products for requested page</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>Returns list of requested quantity of products for requested page.<br/>
-      The list is sorted in requested order, by requested parameter(by Title or by Author or by Price).<br/>
-      If not specified sorting order && parameter for order, then its uses default parameters: descending order by Price.<br/>
-      If requested page < 1, then returns page 1, if requested page is larger then total pages, then returns last page.<br/>
-      The requested quantity of products per page should be in range 5 to 30. If requested quantity < 5 returns 5 products, if > 30 returns 30.<br/>
-      For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true
-    </td>
-  </tr>
   <tr>
     <td>GET/book/id</td>
     <td>Returns product with requested id.</td>
