@@ -54,39 +54,12 @@ Also there ability to create own administration acccount, for that only required
 | ---- | ------------ | ------------ | ----------------- |
 | GET/books/all | Retrieves all data from database. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true |
 | GET/books/page | Returns a list of requested products for requested page | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | Returns list of requested quantity of products for requested page.<br>The list is sorted in requested order, by requested parameter(by Title or by Author or by Price).<br>If not specified sorting order && parameter for order, then its uses default parameters: descending order by Price.<br>If requested page < 1, then returns page 1, if requested page is larger then total pages, then returns last page.<br>The requested quantity of products per page should be in range 5 to 30. If requested quantity < 5 returns 5 products, if > 30 returns 30.<br>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true |
+| GET/book/id | Returns product with requested id. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2<br>ApiVersion-BooksStore: 3 | For ApiVersion-BooksStore : 2 and ApiVersion-BooksStore: 3, retrieves only were parameter “isAvailable” : true |
+| GET/books/available | Returns list of products where parameter isAvailable equals requested true or false. | ApiVersion-BooksStore: 1 |  |
+| GET/books/available/page | Returns list of products where parameter isAvailable equals requested true or false, at requested page with requested quantity. | ApiVersion-BooksStore: 1 | Deviding content into pages as in: GET/books/page method |
+|
 
+| GET/books/count/all | Returns quantity of all books in database. | ApiVersion-BooksStore: 1<br>ApiVersion-BooksStore: 2 | For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true |
+| POST/book/add | Add new book/data in database. Requires entering all data, except the Id, Id generated automatically. | ApiVersion-BooksStore: 1 | |
 
-<table>
-  <tr>
-    <td>GET/book/id</td>
-    <td>Returns product with requested id.</td>
-    <td>ApiVersion-BooksStore: 1<br/>ApiVersion-BooksStore: 2<br/>ApiVersion-BooksStore: 3</td>
-    <td>For ApiVersion-BooksStore : 2 and ApiVersion-BooksStore: 3, retrieves only were parameter “isAvailable” : true</td>
-  </tr>
-  <tr>
-    <td>GET/books/available</td>
-    <td>Returns list of products where parameter isAvailable equals requested true or false.</td>
-    <td>ApiVersion-BooksStore: 1</td>
-    <td></td>
-  </tr>
-  <tr>
-    <td>GET/books/available/page</td>
-    <td>Returns list of products where parameter isAvailable equals requested true or false, at requested page with requested quantity.</td>
-    <td>ApiVersion-BooksStore: 1</td>
-    <td>Deviding content into pages as in: <a href=(#GET/books/page)>GET/books/page </a></td>
-  </tr>
-  <tr>
-    <td>GET/books/count/all</td>
-    <td>Returns quantity of all books in database.</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true</td>
-  </tr>
-  <tr>
-    <td>POST/book/add</td>
-    <td>Add new book/data in database. Requires entering all data, except the Id, Id generated automatically.</td>
-    <td>ApiVersion-BooksStore: 1</td>
-    <td></td>
-  </tr>
-  </colgroup>
-</table>
 
