@@ -141,7 +141,39 @@ Also there ability to create own administration acccount, for that only required
     <td>GET/books/page</td>
     <td>Retrieves all data from database, with requested page and requested quantity per page (divides all data from database into pages) and sorts the data in ascending or descending order.</td>
     <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true</td>
+    <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true. <br/>
+      !ATTENTION! may be overflow error, or slowdown preformance.Depends on current size of database
+    </td>
+  </tr>
+   <tr>
+    <td id="foo">GET/books/page</td>
+    <td>Returns a list of requested products for requested page</td>
+    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
+    <td>Returns list of requested quantity of products for requested page.<br/>
+      The list is sorted in requested order, by requested parameter(by Title or by Author or by Price).<br/>
+      If not specified sorting order && parameter for order, then its uses default parameters: descending order by Price.<br/>
+      If requested page < 1, then returns page 1, if requested page is larger then total pages, then returns last page.<br/>
+      The requested quantity of products per page should be in range 5 to 30. If requested quantity < 5 returns 5 products, if > 30 returns 30.<br/>
+      For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true
+    </td>
+  </tr>
+  <tr>
+    <td>GET/book/id</td>
+    <td>Returns product with requested id.</td>
+    <td>ApiVersion-BooksStore: 1<br/>ApiVersion-BooksStore: 2<br/>ApiVersion-BooksStore: 3</td>
+    <td>For ApiVersion-BooksStore : 2 and ApiVersion-BooksStore: 3, retrieves only were parameter “isAvailable” : true</td>
+  </tr>
+  <tr>
+    <td>GET/books/available</td>
+    <td>Returns list of products where parameter isAvailable equals requested true or false.</td>
+    <td>ApiVersion-BooksStore: 1</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>GET/books/available/page</td>
+    <td>Returns list of products where parameter isAvailable equals requested true or false, at requested page with requested quantity.</td>
+    <td>ApiVersion-BooksStore: 1</td>
+    <td>Simmular to <a href="[#foo]" >GET/books/page</a></td>
   </tr>
   <tr>
     <td>GET/books/count/all</td>
