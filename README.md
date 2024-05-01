@@ -16,8 +16,29 @@ Requiers internet connection and SQL Server (localdb)\MSSQLLocalDB with out pass
 
 ### About Mongo Atlas Database:
 Mongo Atlas Shared Replica set contains all data about books library.
+| Field in MongoDB: | Data type in MongoDB: | Data type in C#: | Field name in C# class: |
+| ----------------- | --------------------- | ---------------- | ----------------------- |
+| _id | ObjectId | string | Id |
+| annotation | String | string | Annotation |
+| author | String | string | Author |
+| available | Boolean | bool | IsAvailable |
+| book | String | string | Title |
+| genre | Array String | string[] | Genres |
+| language | String | string | Language |
+| link | String | Uri | Link |
+| price | Decimal128 | decimal | Price |
+
 ### About Local SQL:
 SQL used for Authentication and Authorization for API and to store Orders details for each user. <br>
+Added custom table dbo.Orders:
+| Order | Key | Data Type | Value |
+| ----- | --- | --------- | ----- |
+| OrderId | PK | nvarchar(450) | not null |
+| UserId | FK | nvarchar(450) | not null |
+| ProductsId |  | nvarchar(max) | null |
+| TotalPrice |  | decimal(18,2) | not null |
+| OrderDateTime |  | datetime2(7) | not null |
+| SubmittedOrder |  | bit | not null |
 
 ### About API Security:
 All session tokens, api version, api-key and user token sends as Headers.
