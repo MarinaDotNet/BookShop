@@ -137,16 +137,8 @@ Also there ability to create own administration acccount, for that only required
     <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
     <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true</td>
   </tr>
-  <tr>
-    <td>GET/books/page</td>
-    <td>Retrieves all data from database, with requested page and requested quantity per page (divides all data from database into pages) and sorts the data in ascending or descending order.</td>
-    <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
-    <td>For ApiVersion-BooksStore : 2 retrieves only were parameter “isAvailable” : true. <br/>
-      !ATTENTION! may be overflow error, or slowdown preformance.Depends on current size of database
-    </td>
-  </tr>
    <tr>
-    <td id="foo">GET/books/page</td>
+    <td> <a name="name_of_target" id="name_of_target">GET/books/page</td>
     <td>Returns a list of requested products for requested page</td>
     <td>ApiVersion-BooksStore: 1 <br> ApiVersion-BooksStore: 2 </td>
     <td>Returns list of requested quantity of products for requested page.<br/>
@@ -173,7 +165,7 @@ Also there ability to create own administration acccount, for that only required
     <td>GET/books/available/page</td>
     <td>Returns list of products where parameter isAvailable equals requested true or false, at requested page with requested quantity.</td>
     <td>ApiVersion-BooksStore: 1</td>
-    <td>Simmular to <a href="[#foo]" >GET/books/page</a></td>
+    <td>Deviding content into pages as in: <a href="name_of_target">GET/books/page</a></td>
   </tr>
   <tr>
     <td>GET/books/count/all</td>
