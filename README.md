@@ -44,7 +44,7 @@ This project uses the standart ASP.NET Identity tables. Only was added custom ta
 
 ### About API Security:
 All session tokens, api version, api-key and user token sends as Headers.
-To use API-Version:2 and API-Version:3, don't need to provide JWT token. But this versions only supports some GET methods from StockController.cs and POST methods from AuthenticationConroller.cs. The list of all methods and supporting API-Version for each method could be found at the end of this page. <br/>
+For API-Version:3, don't need to provide JWT token. But this versions only supports some GET methods from StockController.cs and POST methods from AuthenticationConroller.cs to register new account. The list of all methods and supporting API-Version for each method could be found at the end of this page. <br/>
 API-Version:1 supports all methods of API (GET, POST, PUT, DELETE), for access to it requires: api-key and valid JWT token.
 To JWT token, required provide api-key and correct admin loging details, after thet API will generate JWT token that valid for 1 hour.
 Also there ability to create own administration acccount, for that only required to provide api-key.
