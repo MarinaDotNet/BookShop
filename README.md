@@ -11,7 +11,7 @@ ASP.NET Core controller-based RESTful Web API for e-comerce Book Store website t
   ### About API:
   Async methods in API, providing the ability to handle several concurrent HTTP requests. They are not blocking the main thread while waiting for the database response. <br>
   This API consumes and produces data in Json format, because this format is simple and lightweighted.
- #### Current API supports 3 API-Versions.
+ #### Current API supports 3 API-Versions:
   First API-Version is for Admin access only.<br>
   Second API-Version for User's  access. <br/>
   Third API-Version for not Signed in users, for guests.
