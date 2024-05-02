@@ -1,10 +1,12 @@
 # BookShop Project contains:
 ## BookShop.API - Web API and BookShop.Application - Web Application
+
+## MVC ASP.NET Core Web App 
 Before starting BookShop.Application first needs to be ensure that BookShop.API is running, because BookShop.Application depends on BookShop.API
 
-## Web API with ASP.NET Core.
-HTTP controller-based API for e-comerce Book Store website that uses Mongo Atlas shared Replica Set database for retriving products(books information) and local SQL (localdb)\MSSQLLocalDB Server for user accounts and orders.<br/>
-Requiers internet connection and SQL Server (localdb)\MSSQLLocalDB with out password.
+## ASP.NET Core Web API
+ASP.NET Core controller-based RESTful Web API for e-comerce Book Store website that uses Mongo Atlas shared Replica Set database for retriving products(books information) and local SQL (localdb)\MSSQLLocalDB Server for user accounts and orders.<br/>
+**Requiers:** internet connection and SQL Server (localdb)\MSSQLLocalDB with out password.
 
   ### About API:
   Async methods in API, providing the ability to handle several concurrent HTTP requests. They are not blocking the main thread while waiting for the database response. <br>
