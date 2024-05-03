@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using SendGrid.Helpers.Mail;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -74,11 +75,21 @@ namespace BookShop.API.Controllers
                         signingCredentials: new SigningCredentials(authorizationSignInKey, SecurityAlgorithms.HmacSha256)
                         );
 
-                    return Ok(new
-                    {
-                        token = new JwtSecurityTokenHandler().WriteToken(token),
-                        exparation = token.ValidTo
-                    });
+
+                    EmailSender email = new(_configuration);
+                    var result = await email.SendEmailAsync(new EmailAddress(user.Email, user.UserName), "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
+
+                    return result.Value ?
+                        Ok(new
+                        {
+                            message = "please check your email for token"
+                        }) :
+                        Ok(new
+                        {
+                            message = "Unable to send email",
+                            token = new JwtSecurityTokenHandler().WriteToken(token),
+                            exparation = token.ValidTo
+                        });
                 }
 
                 return Warning(user is null ? "Not registrated user:'" + model.UserEmail + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
@@ -398,11 +409,20 @@ namespace BookShop.API.Controllers
                         signingCredentials: new SigningCredentials(authorizationSignInKey, SecurityAlgorithms.HmacSha256)
                         );
 
-                    return Ok(new
-                    {
-                        token = new JwtSecurityTokenHandler().WriteToken(token),
-                        exparation = token.ValidTo
-                    });
+                    EmailSender email = new(_configuration);
+                    var result = await email.SendEmailAsync(new EmailAddress(user.Email, user.UserName), "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
+
+                    return result.Value ?
+                        Ok(new
+                        {
+                            message = "please check your email for token"
+                        }) :
+                        Ok(new
+                        {
+                            message = "Unable to send email",
+                            token = new JwtSecurityTokenHandler().WriteToken(token),
+                            exparation = token.ValidTo
+                        });
                 }
 
                 return Warning(user is null ? "Not registrated user:'" + model.UserEmail + "'." : "Entered incorrect password", (int)HttpStatusCode.Unauthorized);
