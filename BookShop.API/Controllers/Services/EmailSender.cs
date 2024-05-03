@@ -35,10 +35,10 @@ namespace BookShop.API.Controllers.Services
             //smtpClient.Send(mailMessage);
 
             try
-    {
+            {
                 //Checking email address if it is default email, then it is impossible to send to it email
                 if (emailTo.Email.Equals("admin@email.com") || emailTo.Email.Equals("user@email.com"))
-        {
+                {
                     return false;
                 }
 
@@ -63,8 +63,6 @@ namespace BookShop.API.Controllers.Services
                 Console.WriteLine(ex.Message);
                 return false;
             }
-            
-            smtpClient.Send(mailMessage);
         }
     }
 }

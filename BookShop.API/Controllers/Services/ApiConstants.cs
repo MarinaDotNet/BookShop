@@ -9,6 +9,7 @@
         public const string Admin = "admin";
         public const string CorsNameUser = "MyPolicyForUser";
         public const string CorsNameAdmin = "MyPolicyForAdmin";
-
+        public const string SendGridApiKeyName = "SendGridApiKey";
+        public const string SendEmailName = "SendEmail";
     }
 }
