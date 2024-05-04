@@ -19,6 +19,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Logging;
+using BookShop.API.Controllers.Services;
+using System.Net.Mail;
+using SendGrid.Helpers.Mail;
 
 namespace BookShop.WebApplication.Areas.Identity.Pages.Account
 {
@@ -29,21 +32,21 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
         private readonly IUserStore<ApplicationUser> _userStore;
         private readonly IUserEmailStore<ApplicationUser> _emailStore;
         private readonly ILogger<RegisterModel> _logger;
-        private readonly IEmailSender _emailSender;
-
+        private readonly EmailSender _emailSender;
+        private readonly IConfiguration _configuration;
         public RegisterModel(
             UserManager<ApplicationUser> userManager,
             IUserStore<ApplicationUser> userStore,
             SignInManager<ApplicationUser> signInManager,
-            ILogger<RegisterModel> logger,
-            IEmailSender emailSender)
+            ILogger<RegisterModel> logger, IConfiguration configuration)
         {
             _userManager = userManager;
             _userStore = userStore;
             _emailStore = GetEmailStore();
             _signInManager = signInManager;
             _logger = logger;
-            _emailSender = emailSender;
+            _configuration = configuration;
+            _emailSender = new EmailSender(_configuration);
         }
 
         /// <summary>
@@ -154,18 +157,14 @@ namespace BookShop.WebApplication.Areas.Identity.Pages.Account
                         values: new { area = "Identity", userId = userId, code = code, returnUrl = returnUrl },
                         protocol: Request.Scheme);
 
-                    await _emailSender.SendEmailAsync(Input.Email, "Confirm your email",
-                        $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
+                    var isEmailSend = await _emailSender.SendEmailAsync(new EmailAddress(Input.Email, Input.UserLogin), "Confirm your email", $"Please confirm your account by <a href='{HtmlEncoder.Default.Encode(callbackUrl)}'>clicking here</a>.");
 
-                    if (_userManager.Options.SignIn.RequireConfirmedAccount)
+                    if(!isEmailSend.Value)
                     {
-                        return RedirectToPage("RegisterConfirmation", new { email = Input.Email, returnUrl = returnUrl });
+                        await _userManager.DeleteAsync(user);
                     }
-                    else
-                    {
-                        await _signInManager.SignInAsync(user, isPersistent: false);
-                        return LocalRedirect(returnUrl);
-                    }
+
+                    return RedirectToPage("RegisterConfirmation", new { isEmailSended = isEmailSend.Value, email = Input.Email, returnUrl = returnUrl });
                 }
                 foreach (var error in result.Errors)
                 {
