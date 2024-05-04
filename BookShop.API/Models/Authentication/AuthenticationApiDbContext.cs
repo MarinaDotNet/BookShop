@@ -23,8 +23,8 @@ namespace BookShop.API.Models.Authentication
                 new ApiUser
                 {
                     Id = adminId,
-                    Email = "admin@email.com",
-                    NormalizedEmail = "admin@email.com",
+                    Email = "admin@msichova.com",
+                    NormalizedEmail = "admin@msichova.com",
                     UserName = "admin",
                     NormalizedUserName = "admin",
                     EmailConfirmed = true,
@@ -34,8 +34,8 @@ namespace BookShop.API.Models.Authentication
                 new ApiUser
                 {
                     Id = userId,
-                    Email = "user@email.com",
-                    NormalizedEmail = "user@email.com",
+                    Email = "user@msichova.com",
+                    NormalizedEmail = "user@msichova.com",
                     UserName = "user",
                     NormalizedUserName = "user",
                     EmailConfirmed = true,
