@@ -75,11 +75,10 @@ namespace BookShop.API.Controllers
                         signingCredentials: new SigningCredentials(authorizationSignInKey, SecurityAlgorithms.HmacSha256)
                         );
 
-
                     EmailSender email = new(_configuration);
-                    var result = await email.SendEmailAsync(new EmailAddress(user.Email, user.UserName), "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
+                    var result =  email.SendEmailAsync(user.Email!, "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
 
-                    return result.Value ?
+                    return result.IsCompletedSuccessfully ?
                         Ok(new
                         {
                             message = "please check your email for token"
@@ -410,9 +409,9 @@ namespace BookShop.API.Controllers
                         );
 
                     EmailSender email = new(_configuration);
-                    var result = await email.SendEmailAsync(new EmailAddress(user.Email, user.UserName), "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
+                    var result = email.SendEmailAsync(user.Email!, "Account Access", "Token: " + new JwtSecurityTokenHandler().WriteToken(token) + "<br/>Expires at: " + token.ValidTo);
 
-                    return result.Value ?
+                    return result.IsCompletedSuccessfully ?
                         Ok(new
                         {
                             message = "please check your email for token"
