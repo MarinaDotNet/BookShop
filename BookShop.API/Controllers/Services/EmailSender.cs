@@ -1,6 +1,7 @@
 ﻿using SendGrid.Helpers.Mail;
 using SendGrid;
 using Microsoft.AspNetCore.Mvc;
+using DnsClient;
 /*
  * Uses use the Twilio SendGrid Web API v3 to send emails
  * 
@@ -38,6 +39,15 @@ namespace BookShop.API.Controllers.Services
             {
                 //Checking email address if it is default email, then it is impossible to send to it email
                 if (emailTo.Email.Equals("admin@email.com") || emailTo.Email.Equals("user@email.com"))
+                {
+                    return false;
+                }
+
+                //Checking if email address has a valid host name
+                string hostName = emailTo.Email.Split('@').ElementAt(1);
+                var lookup = new LookupClient();
+                var mxRecords = lookup.Query(hostName, QueryType.MX);
+                if (!mxRecords.Answers.MxRecords().Any())
                 {
                     return false;
                 }
