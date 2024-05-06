@@ -1,10 +1,16 @@
+using BookShop.WebApplication.Areas.Identity.Pages.Account;
 using BookShop.WebApplication.Models;
+using BookShop.WebApplication.Models.ViewsModels;
 using BookShop.WebApplication.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Identity.Client;
 using System.Diagnostics;
 using System.Net.Http.Headers;
+using System.Net.Http.Json;
 
 namespace BookShop.WebApplication.Controllers
 {
@@ -14,7 +20,7 @@ namespace BookShop.WebApplication.Controllers
         private IMemoryCache _tokenCache;
         private readonly HttpClient _httpClient = new();
         private readonly IConfiguration _configuration;
-        private ProductViewModel _productViewModel = new();
+        private ViewModel _viewModel = new();
         public HomeController(ILogger<HomeController> logger, 
             IMemoryCache tokenCache,
             IConfiguration configuration)
@@ -32,7 +38,7 @@ namespace BookShop.WebApplication.Controllers
                 _httpClient.DefaultRequestHeaders.Authorization = 
                         new AuthenticationHeaderValue("Bearer", token!.Value);
             }
-            else
+            else 
             {
                 _httpClient.DefaultRequestHeaders.Add(ApplicationConstants.ApiVersionHeader, "3");
             }
@@ -42,10 +48,15 @@ namespace BookShop.WebApplication.Controllers
         {
             try
             {
-                _productViewModel.Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(new UrlStockRoute().GetFiveMostExpensiveProducts).Result!;
+                ProductViewModel products = new() 
+                { 
+                    Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(new UrlStockRoute().GetFiveMostExpensiveProducts).Result!
+                };
 
-                return _productViewModel.Products.Any() ?
-                    View(_productViewModel) :
+                _viewModel.ProductViewModel = products;
+
+                return _viewModel.ProductViewModel.Products.Any() ?
+                    View(_viewModel) :
                     Error();
             }
             catch
@@ -74,11 +85,12 @@ namespace BookShop.WebApplication.Controllers
                 {
                     var queryData = new Dictionary<string, string> { ["id"] = id };
 
-                    Uri url = new (QueryHelpers.AddQueryString(new UrlStockRoute().GetProductById.ToString(), queryData!));
+                    Uri url = new(QueryHelpers.AddQueryString(new UrlStockRoute().GetProductById.ToString(), queryData!));
 
-                    _productViewModel.Product = _httpClient.GetFromJsonAsync<Product>(url).Result!;
+                    ProductViewModel productViewModel = new();
+                    productViewModel.Product = _httpClient.GetFromJsonAsync<Product>(url).Result!;
 
-                    return _productViewModel.Product is null ? Error() : View(_productViewModel);
+                    return productViewModel.Product is null ? Error() : View(productViewModel);
                 }
                 else
                 {
@@ -91,12 +103,68 @@ namespace BookShop.WebApplication.Controllers
             }
         }
 
+        [Authorize]
         public IActionResult AddToOrder(string id)
         {
             return View();
         }
 
-        public IActionResult More()
+        [Authorize]
+        public IActionResult Shop(int page)
+        {
+            try
+            {
+                PageViewModel pageModel = new();
+                
+                var quantity = _httpClient.GetFromJsonAsync<int>(new UrlStockRoute().GetQuantityAll).Result;
+                if(quantity > 0)
+                {
+                    pageModel.SetTotalPages(quantity);
+                }
+                else
+                {
+                    return Error();
+                }
+
+                if(page > 1)
+                {
+                   pageModel.currentPage = page;
+                }
+
+                ProductViewModel productViewModel = new()
+                {
+                    Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(new UrlStockRoute().GetAllProductsStandard(pageModel.currentPage, pageModel.quantityPerPage, true)).Result!
+                };
+
+                IEnumerable<string> genres = _httpClient.GetFromJsonAsync<IEnumerable<string>>(new UrlStockRoute().GetListGenres).Result!;
+
+                ViewModel model = new()
+                {
+                    PageViewModel = pageModel,
+                    ProductViewModel = productViewModel,
+                    Genres = genres is not null ? genres.ToArray() : []
+                };
+
+                return model.ProductViewModel.Products.Any() ?
+                    View(model) :
+                    Error();
+            }
+            catch
+            {
+                return Error();
+            }
+
+        }
+
+        [Authorize]
+        public IActionResult Filtered(string genre, bool isAcsending)
+        {
+            return View();
+        }
+
+
+        [Authorize]
+        public IActionResult Search(string search)
         {
             return View();
         }
