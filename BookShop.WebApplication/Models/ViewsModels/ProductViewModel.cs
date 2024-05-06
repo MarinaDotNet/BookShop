@@ -1,7 +1,7 @@
 ﻿/*
  * View Model
  */
-namespace BookShop.WebApplication.Models
+namespace BookShop.WebApplication.Models.ViewsModels
 {
     public class ProductViewModel
     {
