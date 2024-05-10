@@ -1,3 +1,4 @@
+using Azure;
 using BookShop.WebApplication.Areas.Identity.Pages.Account;
 using BookShop.WebApplication.Models;
 using BookShop.WebApplication.Models.ViewsModels;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Identity.Client;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -74,7 +76,10 @@ namespace BookShop.WebApplication.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(new ViewModel()
+            {
+                ErrorViewModel = new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier }
+            });
         }
 
         public IActionResult Details(string id)
@@ -164,9 +169,57 @@ namespace BookShop.WebApplication.Controllers
 
 
         [Authorize]
-        public IActionResult Search(string search)
+        public IActionResult Search(string search, int page, bool isAcsending, int quantity)
         {
-            return View();
+            try
+            {
+                if(string.IsNullOrEmpty(search))
+                {
+                    return Error();
+                }
+
+                PageViewModel pageModel = new()
+                {
+                    currentPage = page > 1 ? page : 1,
+                    quantityPerPage = quantity > 6 ? quantity : 6
+                };
+
+                int totalProducts = _httpClient.GetFromJsonAsync<int>(new UrlStockRoute().CountBySearchTearm(search, page, quantity, isAcsending)).Result!;
+                if(totalProducts > 0)
+                {
+                    pageModel.SetTotalPages(totalProducts);
+                }
+                else
+                {
+                    return Error();
+                }
+
+                ProductViewModel productViewModel = new()
+                {
+                    Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(new UrlStockRoute().GetBySearchTearm(search, pageModel.currentPage, pageModel.quantityPerPage, isAcsending)).Result!
+                };
+
+                FilterModel filter = new()
+                {
+                    SearchTearm = search,
+                    IsAscendingOrder = isAcsending
+                };
+
+                ViewModel model = new()
+                {
+                    PageViewModel = pageModel,
+                    ProductViewModel = productViewModel,
+                    FilterViewModel = filter
+                };
+
+                return model.ProductViewModel.Products.Any() ?
+                    View(model) :
+                    Error();
+            }
+            catch
+            {
+                return Error();
+            }
         }
     }
 }
