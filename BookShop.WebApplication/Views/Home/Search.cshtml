@@ -1,5 +1,119 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using BookShop.WebApplication.Models.ViewsModels
 @{
+    ViewData["Title"] = "Books Search";
 }
+@model ViewModel 
+@if(Model.ErrorViewModel is null)
+{
+    <form id="search-form" name="search-form" asp-action="Search" class="row">
+    <div class="input-group-text input-group-lg">
+        @if(string.IsNullOrEmpty(Model.FilterViewModel.SearchTearm))
+        {
+            <input type="text" id="search" name="search" class="form-control" placeholder="type text to search..." required />
+        }
+        else
+        {
+            <input type="text" id="search" name="search" class="form-control" value=@Model.FilterViewModel.SearchTearm required/>
+        }
+
+        <button class="btn btn-primary" tytle="Search" type="submit">Search</button>
+    </div>
+
+    <div class="input-group-text input-group-lg">
+        <select class="form-select form-select-lg mb-3" id="isAcsending" name="isAcsending">
+            @if(Model.FilterViewModel.IsAscendingOrder)
+            {
+                <option value="@true" selected>Ordery by: Acsending</option>
+                <option value="@false">Order by: Descending</option>
+            }
+            else
+            {
+                <option value="@false" selected>Order by: Descending</option>
+                <option value="@true">Ordery by: Acsending</option>
+            }
+        </select>
+
+        <select class="form-select form-select-lg mb-3" id="quantity" name="quantity">
+            @for(int i = 6; i < 25; i += 9)
+            {
+                @if(Model.PageViewModel.quantityPerPage == i)
+                {
+                    <option value="@i" selected>Quantity per page: @i</option>
+                }
+                else
+                {
+                    <option value="@i">Quantity per page: @i</option>
+                }
+            }
+        </select>
+
+        <button class="btn btn-primary btn-lg" tytle="Apply Filters" type="submit">Submitt</button>
+    </div>
+</form>
+
+    <form id="products-table" name="products-table">
+        <div class="row">
+
+            @if (Model.ProductViewModel.Products is not null)
+            {
+                @foreach (Product book in Model.ProductViewModel.Products)
+                {
+                    <div class="col-sm-4">
+                        <div class="card text-white bg-secondary border-primary mb-3">
+                            <h5 class="card-header" title="Book Title" style="height: 7rem;">@book.Title</h5>
+                            <img class="card-img-top align-self-center" src="https://cdn.pixabay.com/photo/2016/03/31/18/27/book-1294379_1280.png" alt="image of book" style="width: 18rem;" />
+                            <div class="card-body">
+                                <h5 class="card-title" title="Book Author">@book.Author</h5>
+                                <h4 class="card-title" title="Price">$@book.Price</h4>
+                                <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                                <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
+                            </div>
+                            <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
+                                @foreach (string genre in book.Genres!)
+                                {
+                                    <a class="card-link text-light text-nowrap" href="#">@genre</a>
+                                }
+
+                            </div>
+                        </div>
+
+                    </div>
+                }
+            }
+        </div>
+        @if (Model.PageViewModel.GetTotalPages() > 1)
+        {
+
+        }
+    </form>
+
+    <form name="pages" id="pages">
+        <div class="btn-toolbar" role="toolbar" aria-label="Pages">
+            @for (int i = 1; i != Model.PageViewModel.GetTotalPages() + 1; i++)
+            {
+                @if (i == Model.PageViewModel.currentPage)
+                {
+                    <a class="btn btn-primary btn-sm disabled" role="button" title="Current Page" aria-disabled="true">@i</a>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-sm" title="Page @i" href=@Url.ActionLink("Search", "Home", 
+                    new 
+                    {
+                        search = Model.FilterViewModel.SearchTearm, 
+                        page = @i,
+                        isAcsending = Model.FilterViewModel.IsAscendingOrder,
+                        quantity = Model.PageViewModel.quantityPerPage
+                    })>@i</a>
+                }
+            }
+        </div>
+    </form>
+}
+else
+{
+    <div>
+        <partial name="../Shared/Error.cshtml" />
+    </div>
+}
+
