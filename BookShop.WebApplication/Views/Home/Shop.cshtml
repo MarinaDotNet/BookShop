@@ -3,37 +3,42 @@
     ViewData["Title"] = "Books Shop";  
 }
  @model ViewModel
-<form id="filter-form" name="filter-form" asp-action="Filtered">
-   
-    @if (Model.Genres is not null)
-    {
-       <select class="form-select form-select-lg mb-3" id="genre" name="genre">
-            <option value="any" selected>any</option>
+
+<form id="search-form" name="search-form" asp-action="Search" class="row">
+    <div class="input-group-text input-group-lg">
+        <input type="text" id="search" name="search" class="form-control" placeholder="type text to search..."/>
+        <button class="btn btn-primary" tytle="Search" type="submit">Search</button>
+    </div>
+</form>
+
+<form id="filter-form" name="filter-form" asp-action="Filtered" class="row">
+    <div class="input-group-text input-group-lg">
+        @if (Model.Genres is not null)
+        {
+            <select class="form-select form-select-lg mb-3" id="genre" name="genre">
+                <option value="any" selected>Displaying genre: any</option>
             @foreach (string genre in Model.Genres)
-            {  
-                <option value="@genre" id="@genre">@genre</option>
+            {
+                    <option value="@genre" id="@genre">Displaying genre: @genre</option>
             }
+            </select>
+        }
+        <select class="form-select form-select-lg mb-3" id="isAcsending" name="isAcsending">
+            <option value="false" selected>Order by: Descending</option>
+            <option value="true">Ordery by: Acsending</option>
         </select>
-    }
- 
-    <select class="form-select form-select-lg mb-3" id="isAcsending" name="isAcsending">
-         <option value="false" selected>Descending</option>
-         <option value="true">Acsending</option>
-    </select>
 
-    <select class="form-select form-select-lg mb-3" id="quantity" name="quantity">
-        <option value="6" selected>6</option>
-        <option value="15">15</option>
-        <option value="24">24</option>
-    </select>
+        <select class="form-select form-select-lg mb-3" id="quantity" name="quantity">
+            <option value="6" selected>Quantity per page: 6</option>
+            <option value="15">Quantity per page: 15</option>
+            <option value="24">Quantity per page: 24</option>
+        </select>
 
-    <button class="btn btn-primary" tytle="Apply Filters" type="submit">Submitt</button>
+        <button class="btn btn-primary btn-lg" tytle="Apply Filters" type="submit">Submitt</button>
+    </div>
 </form>
 
-<form id="search-form" name="search-form" asp-action="Search">
-    <input type="text" id="search" name="search" />
-    <button class="btn btn-primary" tytle="Search" type="submit">Search</button>
-</form>
+
 
 <form id="products-table" name="products-table">
     <div class="row">
