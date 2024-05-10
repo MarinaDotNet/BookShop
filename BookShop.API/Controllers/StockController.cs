@@ -522,6 +522,21 @@ namespace BookShop.API.Controllers
                 return Problem(ex.Message);
             }
         }
+
+        [HttpGet, Route("books/filter/count/condition")]
+        public async Task<int> CountPagesEqualsCondition([FromQuery] string condition, [FromQuery] PageModel model)
+        {
+            try
+            {
+                int quantity = (await _services.GetBooksContainsConditionAsync(condition, model.InAscendingOrder, model.OrderBy)).Count;
+                return quantity;
+            }
+            catch(Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return 0;
+            }
+        }
         #endregion
         #endregion
     }
@@ -838,6 +853,20 @@ namespace BookShop.API.Controllers
             }
         }
 
+        [HttpGet, Route("books/filter/count/condition")]
+        public async Task<int> CountPagesEqualsCondition([FromQuery] string condition, [FromQuery] PageModel model)
+        {
+            try
+            {
+                int quantity = ((await _services.GetBooksContainsConditionAsync(condition, model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList()).Count;
+                return quantity;
+            }
+            catch (Exception ex)
+            {
+                LoggError(ex.Message, ex.StackTrace!);
+                return 0;
+            }
+        }
         #region of Sorting Methods
         //MAY RETURN NULL LIST
         //returns sorted list
