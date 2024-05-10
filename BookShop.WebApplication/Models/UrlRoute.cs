@@ -33,6 +33,37 @@ namespace BookShop.WebApplication.Models
 
         //List of all genres
         public Uri GetListGenres { get; } = new Uri("https://localhost:7257/books/genres");
+
+        public Uri CountBySearchTearm(string term, int page, int quantityPerPage, bool isAscending)
+        {
+            string toSearch = term.Replace(" ", "%20");
+            string link = "https://localhost:7257/books/filter/count/condition?condition=" + toSearch;
+
+            link += "&RequestedPage=";
+            link += page == 0 ? "1" : page;
+
+            link += "&QuantityPerPage=";
+            link += quantityPerPage == 0 ? "6" : quantityPerPage;
+
+            link += "&InAscendingOrder=" + isAscending + "&OrderBy=Price";
+
+            return new Uri(link);
+        }
+        public Uri GetBySearchTearm (string term, int page, int quantityPerPage, bool isAscending)
+        {
+            string toSearch = term.Replace(" ", "%20");
+            string link = "https://localhost:7257/books/filter/condition/contains?condition=" + toSearch;
+            
+            link += "&RequestedPage=";
+            link += page == 0 ? "1" : page;
+
+            link += "&QuantityPerPage=";
+            link += quantityPerPage == 0 ? "6" : quantityPerPage;
+
+            link += "&InAscendingOrder=" + isAscending + "&OrderBy=Price";
+
+            return new Uri(link);
+        }
     }
 
     /**
