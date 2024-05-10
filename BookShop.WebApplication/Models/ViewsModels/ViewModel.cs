@@ -7,5 +7,7 @@
         public PageViewModel PageViewModel { get; set; } = new();
 
         public FilterModel FilterViewModel { get; set; } = new();
+
+        public ErrorViewModel ErrorViewModel { get; set; }
     }
 }
