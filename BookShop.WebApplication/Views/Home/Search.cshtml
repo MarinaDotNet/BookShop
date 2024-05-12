@@ -3,7 +3,7 @@
     ViewData["Title"] = "Books Search";
 }
 @model ViewModel 
-<form>
+<div>
     @if(Model.ErrorViewModel is null)
     {
         <form id="search-form" name="search-form" asp-action="Search" class="row">
@@ -117,4 +117,4 @@
             <partial name="../Shared/Error.cshtml" />
         </div>
     }
-</form>
+</div>
