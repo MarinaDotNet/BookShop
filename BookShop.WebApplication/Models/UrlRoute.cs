@@ -28,7 +28,7 @@ namespace BookShop.WebApplication.Models
         public Uri GetAllProductsStandard(int page, int quantity, bool isAscending)
         {
             return new Uri("https://localhost:7257/books/page?RequestedPage=" + page + "&QuantityPerPage=" + quantity + "&InAscendingOrder=" + isAscending + "&OrderBy=Price");
-            
+    
         }
 
         //List of all genres
@@ -60,6 +60,37 @@ namespace BookShop.WebApplication.Models
             link += "&QuantityPerPage=";
             link += quantityPerPage == 0 ? "6" : quantityPerPage;
 
+            link += "&InAscendingOrder=" + isAscending + "&OrderBy=Price";
+
+            return new Uri(link);
+        }
+
+        public Uri GetByGenre(string genre, int page, int quantityPerPage, bool isAscending)
+        {
+            string link = "https://localhost:7257/books/genre?genre=" + genre.Replace(" ", "%20");
+
+            link += "&RequestedPage=";
+            link += page == 0 ? "1" : page;
+
+            link += "&QuantityPerPage=";
+            link += quantityPerPage == 0 ?
+                6 : quantityPerPage;
+
+            link += "&InAscendingOrder=" + isAscending + "&OrderBy=Price";
+
+            return new Uri(link);
+        }
+        public Uri CountByGenre(string genre)
+        {
+            string link = "https://localhost:7257/books/count/ingenre?genre=" + genre.Replace(" ", "%20");
+            return new Uri(link);
+        }
+        public Uri GetByFilter(bool isAscending, int page, int quantityPerPage)
+        {
+            string link = "https://localhost:7257/books/page?RequestedPage=";
+            link += page == 0 ? "1" : page;
+            link += "&QuantityPerPage=";
+            link += quantityPerPage == 0 ? "6" : quantityPerPage;
             link += "&InAscendingOrder=" + isAscending + "&OrderBy=Price";
 
             return new Uri(link);
