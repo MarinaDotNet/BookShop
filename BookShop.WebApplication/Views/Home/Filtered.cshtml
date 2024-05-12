@@ -1,5 +1,123 @@
-﻿@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
+﻿@using BookShop.WebApplication.Models.ViewsModels
 @{
+    ViewData["Title"] = "Books Filtered";
 }
+ @model ViewModel
+ <form>
+    <label for="filter-form">Filter:</label>
+    <form id="filter-form" name="filter-form" asp-action="Filtered" class="row">
+        <div class="input-group-text input-group-lg">
+            @if (Model.Genres is not null)
+            {
+                <select class="form-select form-select-lg mb-3" id="genre" name="genre">
+                    @if(string.IsNullOrEmpty(Model.FilterViewModel.SelectedGenre))
+                    {
+                        <option value="any" selected>Genre: any</option>
+                        @foreach (string genre in Model.Genres)
+                        {
+                            <option value="@genre" id="@genre">Genre: @genre</option>
+                        }
+                    }
+                    else
+                    {
+                        <option value="any">Genre: any</option>
+                        @foreach (string genre in Model.Genres)
+                        {
+                            @if(Model.FilterViewModel.SelectedGenre.Equals(genre, StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@genre" id="@genre" selected>Genre: @genre</option>
+                            }
+                            else
+                            {
+                                <option value="@genre" id="@genre">Genre: @genre</option>
+                            }
+                        }
+                    }
+                </select>
+            }
+            <select class="form-select form-select-lg mb-3" id="isAcsending" name="isAcsending">
+                @if (Model.FilterViewModel.IsAscendingOrder)
+                {
+                    <option value="@true" selected>In order: Acsending</option>
+                    <option value="@false">In order: Descending</option>
+                }
+                else
+                {
+                    <option value="@false" selected>In order: Descending</option>
+                    <option value="@true">In order: Acsending</option>
+                }
+            </select>
+
+            <select class="form-select form-select-lg mb-3" id="quantity" name="quantity">
+                @for (int i = 6; i < 25; i += 9)
+                {
+                    @if (Model.PageViewModel.quantityPerPage == i)
+                    {
+                        <option value="@i" selected>Quantity at page: @i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">Quantity at page: @i</option>
+                    }
+                }
+            </select>
+
+            <button class="btn btn-primary btn-lg" tytle="Apply Filters" type="submit">Submitt</button>
+        </div>
+    </form>
+    <label for="products-table">Products</label>
+    <form id="products-table" name="products-table">
+        <div class="row">
+
+            @if (Model.ProductViewModel.Products is not null)
+            {
+                @foreach (Product book in Model.ProductViewModel.Products)
+                {
+                    <div class="col-sm-4">
+                        <div class="card text-white bg-secondary border-primary mb-3">
+                            <h5 class="card-header" title="Book Title" style="height: 7rem;">@book.Title</h5>
+                            <img class="card-img-top align-self-center" src="https://cdn.pixabay.com/photo/2016/03/31/18/27/book-1294379_1280.png" alt="image of book" style="width: 18rem;" />
+                            <div class="card-body">
+                                <h5 class="card-title" title="Book Author">@book.Author</h5>
+                                <h4 class="card-title" title="Price">$@book.Price</h4>
+                                <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                                <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
+                            </div>
+                            <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
+                                @foreach (string genre in book.Genres!)
+                                {
+                                    <a class="card-link text-light text-nowrap" href="#">@genre</a>
+                                }
+
+                            </div>
+                        </div>
+
+                    </div>
+                }
+            }
+        </div>
+    </form>
+    <label for="pages">Pages</label>
+    <form name="pages" id="pages">
+        <div class="btn-toolbar" role="toolbar" aria-label="Pages">
+            @for (int i = 1; i != Model.PageViewModel.GetTotalPages() + 1; i++)
+            {
+                @if (i == Model.PageViewModel.currentPage)
+                {
+                    <a class="btn btn-primary btn-sm disabled" role="button" title="Current Page" aria-disabled="true">@i</a>
+                }
+                else
+                {
+                    <a class="btn btn-primary btn-sm" title="Page @i" href=@Url.ActionLink("Filtered", "Home",
+                       new
+                       {
+                           genre = Model.FilterViewModel.SelectedGenre,
+                           isAcsending = Model.FilterViewModel.IsAscendingOrder,
+                           page = @i,
+                           quantity = Model.PageViewModel.quantityPerPage
+                           })>@i</a>
+                        }
+            }
+        </div>
+        </form>
+</form>
