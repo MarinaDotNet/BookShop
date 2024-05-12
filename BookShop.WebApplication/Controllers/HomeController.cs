@@ -162,9 +162,61 @@ namespace BookShop.WebApplication.Controllers
         }
 
         [Authorize]
-        public IActionResult Filtered(string genre, bool isAcsending)
+        public IActionResult Filtered(string genre, bool isAcsending, int page, int quantity)
         {
-            return View();
+            try
+            {
+                PageViewModel pageModel = new()
+                {
+                    currentPage = page > 1 ? page : 1,
+                    quantityPerPage = quantity > 6 ? quantity : 6
+                };
+
+                int totalProducts = _httpClient.GetFromJsonAsync<int>(
+                    string.IsNullOrEmpty(genre) || genre.Equals("any") ?
+                    new UrlStockRoute().GetQuantityAll : new UrlStockRoute().CountByGenre(genre)).Result!;
+                if(totalProducts > 0)
+                {
+                    pageModel.SetTotalPages(totalProducts);
+                }
+                else
+                {
+                    return Error();
+                }
+
+                ProductViewModel productViewModel = new()
+                {
+                    Products = _httpClient.GetFromJsonAsync<IEnumerable<Product>>(
+                        string.IsNullOrEmpty(genre) || genre.Equals("any") ?
+                            new UrlStockRoute().GetByFilter(
+                                isAcsending, pageModel.currentPage, pageModel.quantityPerPage) : 
+                            new UrlStockRoute().GetByGenre(
+                                genre, pageModel.currentPage, pageModel.quantityPerPage, isAcsending)).Result!
+                };
+
+                FilterModel filterModel = new()
+                {
+                    SearchTearm = string.Empty,
+                    SelectedGenre = string.IsNullOrEmpty(genre) || genre.Equals("any") ?
+                    string.Empty : genre,
+                    IsAscendingOrder = isAcsending
+                };
+
+                ViewModel model = new()
+                {
+                    FilterViewModel = filterModel,
+                    PageViewModel = pageModel,
+                    ProductViewModel = productViewModel,
+                    Genres = [..GetListGenres(new UrlStockRoute().GetListGenres)]
+                };
+
+                return model.ProductViewModel.Products is not null ?
+                    View(model) : Error();
+            }
+            catch
+            {
+                return Error();
+            }
         }
 
 
@@ -221,5 +273,28 @@ namespace BookShop.WebApplication.Controllers
                 return Error();
             }
         }
+
+        #region of Help Methods for Controller
+        //Returns list of genres in Ascending order and all records converted to lowercase
+        private List<string> GetListGenres(Uri url)
+        {
+            try
+            {
+                IEnumerable<string> data = _httpClient.GetFromJsonAsync<IEnumerable<string>>(url).Result!;
+                
+                List<string> genres = [];
+                if(data.Any() && data is not null)
+                {
+                    data.Order().ToList().ForEach(_ => genres.Add(_.ToLowerInvariant()));
+                }
+                return genres.Count > 0 ? [.. genres.Order()] : genres;
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, message: ex.Message, ex.StackTrace);
+                return [];
+            }
+        }
+        #endregion
     }
 }
