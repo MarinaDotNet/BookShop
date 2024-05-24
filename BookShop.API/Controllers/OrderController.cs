@@ -290,7 +290,7 @@ namespace BookShop.API.Controllers
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
 
-                        string info = "OrderID: " + order.OrderId + ". For user: " + user.UserName + "at DateTime: " + order.OrderDateTime;
+                        string info = "OrderID: " + order.OrderId + ", at DateTime: " + order.OrderDateTime;
                         if (result == 0)
                         {
                             return Warning("Unable to process request. Products was not removed " +
@@ -529,7 +529,7 @@ namespace BookShop.API.Controllers
                     orders?.ForEach(order => model.Add(new(order, "")));
 
                     return model.Any() ? Successfull(model.ToJson()) :
-                        Warning("There nor orders found for user: " + user.UserName, (int)HttpStatusCode.NoContent);
+                        Warning("There nor orders found for current user.", (int)HttpStatusCode.NoContent);
                 }
                 else
                 {
@@ -833,7 +833,7 @@ namespace BookShop.API.Controllers
                         _dbContext.Orders.Update(order);
                         var result = await _dbContext.SaveChangesAsync();
 
-                        string info = "OrderID: " + order.OrderId + ".For UserID: " + user.Id + "at DateTime: " + order.OrderDateTime;
+                        string info = "OrderID: " + order.OrderId + ", at DateTime: " + order.OrderDateTime;
 
                         if (result == 0)
                         {
@@ -1052,7 +1052,7 @@ namespace BookShop.API.Controllers
                     orders?.ForEach(order => model.Add(new(order, "")));
 
                     return model.Any() ? Successfull(model.ToJson()) :
-                        Warning("There nor orders found for user: " + user.UserName, (int)HttpStatusCode.NoContent);
+                        Warning("There nor orders found for current user", (int)HttpStatusCode.NoContent);
                 }
                 else
                 {
