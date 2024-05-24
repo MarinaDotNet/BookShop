@@ -3,18 +3,23 @@
     ViewData["Title"] = "Books Shop";  
 }
  @model ViewModel
- <div>
-    <label for="search-form">Search</label>
+<div class="container-fluid">
+    @* <label for="search-form" class="colFormLabelLg">Search Bar</label> *@
     <form id="search-form" name="search-form" asp-action="Search" class="row">
-        <div class="input-group-text input-group-lg">
-            <input type="text" id="search" name="search" class="form-control" placeholder="type text to search..." required/>
-            <button class="btn btn-primary" tytle="Search" type="submit">Search</button>
-        </div>
+        <fieldset>
+            <legend>Search Bar</legend>
+            <div class="input-group-text input-group-lg">
+                <input type="text" id="search" name="search" class="form-control" placeholder="type text to search..." required/>
+                <button class="btn btn-primary" tytle="Search" type="submit">Search</button>
+            </div>
+        </fieldset>
     </form>
 
-    <label for="filter-form">Filter:</label>
+    @* <label for="filter-form" class="colFormLabelLg">Filter Bar</label> *@
     <form id="filter-form" name="filter-form" asp-action="Filtered" class="row">
-        <div class="input-group-text input-group-lg">
+        <fieldset>
+            <legend>Filter Bar</legend>
+            <div class="input-group-text input-group-lg">
             @if (Model.Genres is not null)
             {
                 <select class="form-select form-select-lg mb-3" id="genre" name="genre">
@@ -71,11 +76,14 @@
             </select>
 
             <button class="btn btn-primary btn-lg" tytle="Apply Filters" type="submit">Submitt</button>
-        </div>
+            </div>
+        </fieldset>
     </form>
 
-    <label for="products-table">Products</label>
+    @* <label for="products-table" class="colFormLabelLg">Products</label> *@
     <form id="products-table" name="products-table" class="row">
+        <fieldset> 
+            <legend>Products</legend>
         <div class="row">
         
             @if (Model.ProductViewModel.Products is not null)
@@ -89,8 +97,8 @@
                             <div class="card-body">
                                 <h5 class="card-title" title="Book Author">@book.Author</h5>
                                 <h4 class="card-title" title="Price">$@book.Price</h4>
-                                <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
-                                <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
+                                    <a class="btn btn-primary my-btn" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                                    <a class="btn btn-primary my-btn" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
                             </div>
                             <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
                                 @foreach (string genre in book.Genres!)
@@ -104,23 +112,27 @@
                     </div>
                 }
             }
-        </div>
+            </div>
+        </fieldset>
     </form>
 
-    <label for="pages">Pages</label>
+    <label for="pages" class="colFormLabelLg">Pages</label>
     <form name="pages" id="pages" class="row">
+        <fieldset>
+            <legend>Pages</legend>
         <div class="btn-toolbar" role="toolbar" aria-label="Pages">
             @for (int i = 1; i != Model.PageViewModel.GetTotalPages() + 1; i++)
             {
                 @if (i == Model.PageViewModel.currentPage)
                 {
-                    <a class="btn btn-primary btn-sm disabled" role="button" title="Current Page" aria-disabled="true">@i</a>
+                        <a class="btn btn-primary btn-sm disabled my-btn" role="button" title="Current Page" aria-disabled="true">@i</a>
                 }
                 else
                 {
-                    <a class="btn btn-primary btn-sm" title="Page @i" href=@Url.ActionLink("Shop", "Home", new {page = @i})>@i</a>
+                        <a class="btn btn-primary btn-sm my-btn" title="Page @i" href=@Url.ActionLink("Shop", "Home", new {page = @i})>@i</a>
                 }
             }
-        </div>
+            </div>
+        </fieldset>
     </form>
 </div>

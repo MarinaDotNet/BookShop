@@ -3,8 +3,9 @@
     ViewData["Title"] = "Home Page";
 }
  @model ViewModel
+
 <form> 
-    <div class="text-center">
+    <div class="text-center container-fluid">
         <h1 class="display-4">You are welcome to our Book Shop</h1>
     </div>
   <div class="row">
@@ -19,8 +20,8 @@
                          <div class="card-body">
                             <h5 class="card-title" title="Book Author">@book.Author</h5>
                             <h4 class="card-title" title="Price">$@book.Price</h4>
-                                <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
-                                <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
+                            <a class="btn btn-primary my-btn" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                            <a class="btn btn-primary my-btn" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
                         </div>
                         <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
                             @foreach (string genre in book.Genres!)
@@ -41,7 +42,7 @@
                         <h5 class="card-title" title="Book Author">Discover more</h5>
                         <h4 class="card-title" title="Price">Books, for any taste</h4>
 
-                        <a class="btn btn-primary" title="Click to observe our rich library" href=@Url.ActionLink("Shop", "Home")>Observe more Books</a>
+                        <a class="btn btn-primary my-btn" title="Click to observe our rich library" href=@Url.ActionLink("Shop", "Home")>Observe more Books</a>
                     </div>
                     <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
                         <a class="card-link text-light text-nowrap" href=""></a>

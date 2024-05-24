@@ -69,8 +69,8 @@
                                 <div class="card-body">
                                     <h5 class="card-title" title="Book Author">@book.Author</h5>
                                     <h4 class="card-title" title="Price">$@book.Price</h4>
-                                    <a class="btn btn-primary" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
-                                    <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
+                                    <a class="btn btn-primary my-btn" title="Explore more about: &#10; `@book.Title`" href=@Url.ActionLink("Details", "Home", new {@book.Id})>Details</a>
+                                    <a class="btn btn-primary my-btn" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@book.Id})>Add to Order</a>
                                 </div>
                                 <div class="card-footer text-light" title="Book Genres" style="height: 5rem;">
                                     @foreach (string genre in book.Genres!)
@@ -94,12 +94,12 @@
                 {
                     @if (i == Model.PageViewModel.currentPage)
                     {
-                        <a class="btn btn-primary btn-sm disabled" role="button" title="Current Page" aria-disabled="true">@i</a>
+                        <a class="btn btn-primary btn-sm disabled my-btn" role="button" title="Current Page" aria-disabled="true">@i</a>
                     }
                     else
                     {
-                        <a class="btn btn-primary btn-sm" title="Page @i" href=@Url.ActionLink("Search", "Home", 
-                        new 
+                        <a class="btn btn-primary btn-sm my-btn" title="Page @i" href=@Url.ActionLink("Search", "Home",
+               new 
                         {
                             search = Model.FilterViewModel.SearchTearm, 
                             page = @i,
