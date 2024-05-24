@@ -600,6 +600,33 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
+
+        [HttpGet, Route("/order/current")]
+        [Authorize(Roles = ApiConstants.Admin)]
+        public async Task<ActionResult<OrderDisplayModel>> GetCurrentOrder()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+                user ??= await _userManager.FindByEmailAsync(User.Identity!.Name!);
+
+                if(user is not null)
+                {
+                    Order? order = await _dbContext.Orders.Where(_ => _!.UserId!.Equals(user!.Id) && !_.SubmittedOrder).FirstOrDefaultAsync();
+                    return order is not null ?
+                        Successfull((new OrderDisplayModel(order, "")).ToJson()) :
+                        Warning("There nor unsubmitted orders found for current user.", (int)HttpStatusCode.NoContent);
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch(Exception ex)
+            {
+               return Error(ex);
+            }
+        }
     }
 
     [ApiController]
@@ -1100,6 +1127,32 @@ namespace BookShop.API.Controllers
                 {
                     bool result = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id) && !_.SubmittedOrder).AnyAsync();
                     return Successfull(result.ToJson());
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+
+        [HttpGet, Route("/order/current")]
+        public async Task<ActionResult<OrderDisplayModel>> GetCurrentOrder()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+                user ??= await _userManager.FindByEmailAsync(User.Identity!.Name!);
+
+                if (user is not null)
+                {
+                    Order? order = await _dbContext.Orders.Where(_ => _!.UserId!.Equals(user!.Id) && !_.SubmittedOrder).FirstOrDefaultAsync() ;
+                    return order is not null ?
+                        Successfull((new OrderDisplayModel(order, "")).ToJson()) :
+                        Warning("There nor unsubmitted orders found for current user.", (int)HttpStatusCode.NoContent);
                 }
                 else
                 {
