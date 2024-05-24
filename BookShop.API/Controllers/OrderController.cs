@@ -576,6 +576,30 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
+
+        [HttpGet, Route("/order/is-any")]
+        [Authorize(Roles = ApiConstants.Admin)]
+        public async Task<ActionResult<bool>> IsAnyUnsubmitted()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+                user ??= await _userManager.FindByEmailAsync(User.Identity!.Name!);
+                if(user is not null)
+                {
+                    bool result = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id) && !_.SubmittedOrder).AnyAsync();
+                    return Successfull(result.ToJson());
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                }
+            }
+            catch(Exception ex)
+            {
+                return Error(ex);
+            }
+        }
     }
 
     [ApiController]
@@ -1057,6 +1081,29 @@ namespace BookShop.API.Controllers
                 else
                 {
                     return Warning("Please sign in, Unauthorized access declined.", (int)HttpStatusCode.Unauthorized);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Error(ex);
+            }
+        }
+
+        [HttpGet, Route("/order/is-any")]
+        public async Task<ActionResult<bool>> IsAnyUnsubmitted()
+        {
+            try
+            {
+                var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+                user ??= await _userManager.FindByEmailAsync(User.Identity!.Name!);
+                if (user is not null)
+                {
+                    bool result = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id) && !_.SubmittedOrder).AnyAsync();
+                    return Successfull(result.ToJson());
+                }
+                else
+                {
+                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
                 }
             }
             catch (Exception ex)
