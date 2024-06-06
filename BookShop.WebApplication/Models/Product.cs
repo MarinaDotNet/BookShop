@@ -28,5 +28,8 @@ namespace BookShop.WebApplication.Models
         [Range(0, int.MaxValue)]
         [Precision(18, 2)]
         public decimal Price { get; set; } = 0;
+
+        [Range(1, int.MaxValue)]
+        public int QuantityInOrder { get; set; } = 1;
     }
 }
