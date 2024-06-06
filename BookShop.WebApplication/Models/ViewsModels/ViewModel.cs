@@ -9,5 +9,7 @@
         public FilterModel FilterViewModel { get; set; } = new();
 
         public ErrorViewModel ErrorViewModel { get; set; }
+
+        public OrderViewModel OrderViewModel { get; set; } = new();
     }
 }
