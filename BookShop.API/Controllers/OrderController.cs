@@ -35,19 +35,30 @@ namespace BookShop.API.Controllers
         private void LogingWarning(string message) => _logger.LogWarning(message: message);
         private ActionResult Warning(string message, int statusCode)
         {
+            OrderDisplayModel model = new(new Order(), message);
+
             LogingWarning(message);
             return statusCode == (int)HttpStatusCode.Unauthorized ?
-                Unauthorized(message) :
+                Unauthorized(model) :
                 statusCode == (int)HttpStatusCode.NotFound ?
-                NotFound(message) :
+                NotFound(model) :
                 statusCode == (int)HttpStatusCode.BadRequest ?
-                BadRequest(message) :
-                Problem(message);
+                BadRequest(model) :
+                UnprocessableEntity(model);
         }
-        private ActionResult Successfull(string message)
+        private ActionResult Successfull(OrderDisplayModel model)
         {
-            LogingInformation(message);
-            return Ok(message);
+            LogingInformation(model.ToJson());
+            return Ok(model);
+        }
+        private ActionResult Successfull(List<OrderDisplayModel> orders)
+        {
+            LogingInformation(orders.ToJson());
+            return Ok(orders);
+        }
+        private ActionResult Successfull(bool data)
+        {
+            return Ok(data);
         }
         private ActionResult Error(Exception ex)
         {
@@ -97,8 +108,8 @@ namespace BookShop.API.Controllers
                     if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
                         Order? order = listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder);
-                        return Warning(new OrderDisplayModel(order!, 
-                            "Please submit order above before to create new order").ToJson(), 0);
+                        return Warning("OrderId: " + listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder!)!.OrderId +
+                            ". Please submit order above before to create new order", 0);
                     }
 
                     Order orderToPost = new()
@@ -141,7 +152,7 @@ namespace BookShop.API.Controllers
                     else
                     {
                         OrderDisplayModel model = new(orderToPost, "Order created successfully");
-                        return Successfull(model.ToJson());
+                        return Successfull(model);
                     }
 
                 }
@@ -224,7 +235,7 @@ namespace BookShop.API.Controllers
                         else
                         {
                             message += " Order updated successfully";
-                            return Successfull(new OrderDisplayModel(order, message).ToJson());
+                            return Successfull(new OrderDisplayModel(order, message));
                         }
                     }
                     else
@@ -296,7 +307,7 @@ namespace BookShop.API.Controllers
                             return Warning("Unable to process request. Products was not removed " +
                                 info, (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull(new OrderDisplayModel(order, "Products removed successfully, " + info).ToJson());
+                        else return Successfull(new OrderDisplayModel(order, "Products removed successfully, " + info));
                     }
                     else
                     {
@@ -386,7 +397,7 @@ namespace BookShop.API.Controllers
                                     message = "The product/products with id: " + idsDeleted + ", was not found or        currently unavailable. Those products was removed from your order. Order was not subbmitted. Please recheck the order and resubmit it again.";
                                     return Warning(message, (int)HttpStatusCode.NotFound);
                                 }
-                                else return Successfull(new OrderDisplayModel(order, "Order submitted successfully, at: " + order.OrderDateTime).ToJson());
+                                else return Successfull(new OrderDisplayModel(order, "Order submitted successfully, at: " + order.OrderDateTime));
                             }
                         }
                         else
@@ -428,7 +439,7 @@ namespace BookShop.API.Controllers
                     _dbContext.Orders.Update(order);
                     var result = await _dbContext.SaveChangesAsync();
                     return result != 0 ? 
-                        Successfull("Order: " + order.OrderId + ", successfully unsubmitted") :
+                        Successfull(new OrderDisplayModel(order, "Order: " + order.OrderId + ", successfully unsubmitted")) :
                         Warning("Unable to process your request for order: " + order.OrderId, 
                         (int)HttpStatusCode.BadRequest);
                 }
@@ -493,7 +504,7 @@ namespace BookShop.API.Controllers
                             info = MessageUnavailableProducts(productNotAvailable, order.SubmittedOrder);
                         } 
 
-                        return Successfull(new OrderDisplayModel(order, info).ToJson());
+                        return Successfull(new OrderDisplayModel(order, info));
                     }
                     else
                     {
@@ -528,7 +539,7 @@ namespace BookShop.API.Controllers
 
                     orders?.ForEach(order => model.Add(new(order, "")));
 
-                    return model.Any() ? Successfull(model.ToJson()) :
+                    return model.Any() ? Successfull(model) :
                         Warning("There nor orders found for current user.", (int)HttpStatusCode.NoContent);
                 }
                 else
@@ -559,7 +570,7 @@ namespace BookShop.API.Controllers
                         var result = await _dbContext.SaveChangesAsync();
                         return result == 0 ? 
                             Warning("Unable to process your request for order ID: " + orderId, 0) :
-                            Successfull(new OrderDisplayModel(order, "The Order Deleted successfully.").ToJson());
+                            Successfull(new OrderDisplayModel(order, "The Order Deleted successfully."));
                     }
                     else
                     {
@@ -588,7 +599,7 @@ namespace BookShop.API.Controllers
                 if(user is not null)
                 {
                     bool result = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id) && !_.SubmittedOrder).AnyAsync();
-                    return Successfull(result.ToJson());
+                    return Successfull(result);
                 }
                 else
                 {
@@ -613,14 +624,20 @@ namespace BookShop.API.Controllers
                 if(user is not null)
                 {
                     Order? order = await _dbContext.Orders.Where(_ => _!.UserId!.Equals(user!.Id) && !_.SubmittedOrder).FirstOrDefaultAsync();
-                    return order is not null ?
-                        Successfull((new OrderDisplayModel(order, "")).ToJson()) :
+                    if (order is not null)
+                    {
+                       return Successfull(new OrderDisplayModel(order, ""));
+                    }
+                    else
+                    {
                         Warning("There nor unsubmitted orders found for current user.", (int)HttpStatusCode.NoContent);
+                    }
                 }
                 else
                 {
                     return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
                 }
+                return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
             }
             catch(Exception ex)
             {
@@ -649,19 +666,30 @@ namespace BookShop.API.Controllers
         private void LogingWarning(string message) => _logger.LogWarning(message: message);
         private ActionResult Warning(string message, int statusCode)
         {
+            OrderDisplayModel model = new(new Order(), message);
+
             LogingWarning(message);
             return statusCode == (int)HttpStatusCode.Unauthorized ?
-                Unauthorized(message) :
+                Unauthorized(model) :
                 statusCode == (int)HttpStatusCode.NotFound ?
-                NotFound(message) :
+                NotFound(model) :
                 statusCode == (int)HttpStatusCode.BadRequest ?
-                BadRequest(message) :
-                Problem(message);
+                BadRequest(model) :
+                UnprocessableEntity(model);
         }
-        private ActionResult Successfull(string message)
+        private ActionResult Successfull(OrderDisplayModel model)
         {
-            LogingInformation(message);
-            return Ok(message);
+            LogingInformation(model.ToJson());
+            return Ok(model);
+        }
+        private ActionResult Successfull(List<OrderDisplayModel> orders)
+        {
+            LogingInformation(orders.ToJson());
+            return Ok(orders);
+        }
+        private ActionResult Successfull(bool data)
+        {
+            return Ok(data);
         }
         private ActionResult Error(Exception ex)
         {
@@ -696,7 +724,7 @@ namespace BookShop.API.Controllers
         //User, should add new products to last not submitted order and submit it,
         //before to start another new order.
         [HttpPost, Route("/order")]
-        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromQuery]List<string> productsIds)
+        public async Task<ActionResult<OrderDisplayModel>> PostOrder([FromQuery] List<string> productsIds)
         {
             try
             {
@@ -710,8 +738,8 @@ namespace BookShop.API.Controllers
                     //checks if user has an uncompleted orders before to create new order
                     if (listOfOrders.Any(_ => !_.SubmittedOrder))
                     {
-                        return Warning(new OrderDisplayModel(listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder)!, 
-                            "Please submit order above before to create new order").ToJson(), 0);
+                        return Warning("OrderId: " + listOfOrders.FirstOrDefault(_ => !_.SubmittedOrder!)!.OrderId +
+                            ". Please submit order above before to create new order", 0);
                     }
 
                     Order orderToPost = new()
@@ -753,12 +781,12 @@ namespace BookShop.API.Controllers
                     }
                     else
                     {
-                        return Successfull(new OrderDisplayModel(orderToPost, 
-                            "Order created successfully").ToJson());
+                        return Successfull(new OrderDisplayModel(orderToPost,
+                            "Order created successfully"));
                     }
 
                 }
-                return Warning("User was not found in system, please ensure that you signed in", 
+                return Warning("User was not found in system, please ensure that you signed in",
                     (int)HttpStatusCode.BadRequest);
             }
             catch (Exception ex)
@@ -830,11 +858,11 @@ namespace BookShop.API.Controllers
 
                         if (result == 0)
                         {
-                            return Warning("Unable to process request. Products was not added", 
+                            return Warning("Unable to process request. Products was not added",
                                 (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull(new OrderDisplayModel(order, 
-                            " Order updated successfully").ToJson());
+                        else return Successfull(new OrderDisplayModel(order,
+                            " Order updated successfully"));
                     }
                     else
                     {
@@ -855,7 +883,7 @@ namespace BookShop.API.Controllers
                 return Error(ex);
             }
         }
- 
+
         //Deletes products from existing order for the current authorized user
         [HttpPut, Route("/order/products/delete")]
         public async Task<ActionResult> PutOrderDeleteProducts([FromQuery] List<string> productIds, [Required] string orderId)
@@ -891,7 +919,7 @@ namespace BookShop.API.Controllers
                             return Warning("Unable to process request. Products was not removed " +
                                 info, (int)HttpStatusCode.BadRequest);
                         }
-                        else return Successfull("Products removed successfully, " + info.ToJson());
+                        else return Successfull(new OrderDisplayModel(order ,"Products removed successfully, " + info));
                     }
                     else
                     {
@@ -918,7 +946,7 @@ namespace BookShop.API.Controllers
         //If some products is not available, then deletes it from order, recounting total price and
         //informing the user about this and that the order needs to be double-checked and resubmit it
         [HttpPut, Route("/order/submit")]
-        public async Task<ActionResult> PutOrderAsSubmitted([FromQuery]string orderId)
+        public async Task<ActionResult> PutOrderAsSubmitted([FromQuery] string orderId)
         {
             try
             {
@@ -971,7 +999,7 @@ namespace BookShop.API.Controllers
                             if (result == 0)
                             {
                                 LogingWarning("Unable to process request. Order was not saved, OrderID" + order.OrderId);
-                                return BadRequest("Not able to process your request. Order was not saved.".ToJson());
+                                return BadRequest("Not able to process your request. Order was not saved.");
                             }
                             else
                             {
@@ -980,19 +1008,19 @@ namespace BookShop.API.Controllers
                                 if (!order.SubmittedOrder)
                                 {
                                     message = "The product/products with id: " + idsDeleted + ", was not found or        currently unavailable. Those products was removed from your order. Order was not subbmitted. Please recheck the order and resubmit it again.";
-                                    return Warning(message, (int)HttpStatusCode.NotFound);
+                                    return Warning(message,(int)HttpStatusCode.NotFound);
                                 }
                                 else
                                 {
                                     message = "Order submitted successfully, at: " + order.OrderDateTime;
-                                    OrderDisplayModel model = new(order, message);
-                                    return Successfull(model.ToJson());
+                                    return Successfull(new OrderDisplayModel(order, message));
                                 }
                             }
                         }
                         else
                         {
-                            return Warning("Can not submit empty Order, Order should have at list one product. Request declined at: " + DateTime.Now, (int)HttpStatusCode.BadRequest);
+                            return Warning("Can not submit empty Order. Order should have at list one product. Request declined at: " + DateTime.Now,
+                                (int)HttpStatusCode.BadRequest);
                         }
                     }
                     else
@@ -1001,12 +1029,14 @@ namespace BookShop.API.Controllers
                         message += order is not null ?
                          ", already submitted." :
                          ", was not found.";
-                        return Warning(message + "Request declined at: " + DateTime.Now, (int)HttpStatusCode.BadRequest);
+                        return Warning(message + "Request declined at: " + DateTime.Now,
+                            (int)HttpStatusCode.BadRequest);
                     }
                 }
                 else
                 {
-                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                    return Warning("User was not found in system, please ensure that you signed in",
+                        (int)HttpStatusCode.BadRequest);
                 }
             }
             catch (Exception ex)
@@ -1067,17 +1097,17 @@ namespace BookShop.API.Controllers
                             info = MessageUnavailableProducts(productNotAvailable, order.SubmittedOrder);
                         }
 
-                        OrderDisplayModel display = new(order, info);
-                        return Successfull(display.ToJson());
+                        return Successfull(new OrderDisplayModel(order, info));
                     }
                     else
                     {
-                        return Warning("Order with Id: " + orderId + ", was not found. UserID: " + user.Id + ", access declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
+                        return Warning("Order with Id: " + orderId + ", was not found for current SignedIn user. The access declined at: " + DateTime.Now, (int)HttpStatusCode.NotFound);
                     }
                 }
                 else
                 {
-                    return Warning("User was not found in system, please ensure that you signed in", (int)HttpStatusCode.BadRequest);
+                    return Warning("User was not found in system, please ensure that you signed in", 
+                        (int)HttpStatusCode.BadRequest);
                 }
             }
             catch (Exception ex)
@@ -1102,7 +1132,7 @@ namespace BookShop.API.Controllers
 
                     orders?.ForEach(order => model.Add(new(order, "")));
 
-                    return model.Any() ? Successfull(model.ToJson()) :
+                    return model.Any() ? Successfull(model) :
                         Warning("There nor orders found for current user", (int)HttpStatusCode.NoContent);
                 }
                 else
@@ -1126,7 +1156,7 @@ namespace BookShop.API.Controllers
                 if (user is not null)
                 {
                     bool result = await _dbContext.Orders.Where(_ => _.UserId.Equals(user.Id) && !_.SubmittedOrder).AnyAsync();
-                    return Successfull(result.ToJson());
+                    return Successfull(result);
                 }
                 else
                 {
@@ -1151,7 +1181,7 @@ namespace BookShop.API.Controllers
                 {
                     Order? order = await _dbContext.Orders.Where(_ => _!.UserId!.Equals(user!.Id) && !_.SubmittedOrder).FirstOrDefaultAsync() ;
                     return order is not null ?
-                        Successfull((new OrderDisplayModel(order, "")).ToJson()) :
+                        Successfull(new OrderDisplayModel(order, "")) :
                         Warning("There nor unsubmitted orders found for current user.", (int)HttpStatusCode.NoContent);
                 }
                 else
