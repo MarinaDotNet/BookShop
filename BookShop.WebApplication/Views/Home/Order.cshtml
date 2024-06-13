@@ -1,0 +1,52 @@
+﻿@using BookShop.WebApplication.Models.ViewsModels
+@{
+    ViewData["Title"] = "Book Details";
+}
+ @model ViewModel
+ <form>
+     <p>Order Id: @Model.OrderViewModel.Order.OrderId</p>
+     <p>Total Price: $@Model.OrderViewModel.Order.TotalPrice</p>
+    @if(Model.OrderViewModel.Order.IsSubmitted)
+    {
+        <p>Order Submitted at: @Model.OrderViewModel.Order.OrderDateTime</p>
+    }
+    else
+    {
+        <p>Order last time updated: @Model.OrderViewModel.Order.OrderDateTime</p>
+    }
+    <h3>Products in order:</h3>
+    @if(Model.OrderViewModel.Order.Products!.Count() > 0)
+    {
+        @foreach(Product product in Model.OrderViewModel.Order.Products!)
+        {
+            <p>Product Id: @product.Id</p>
+            <p>Title: @product.Title</p>
+            <p>Author: @product.Author</p>
+            <p>Gernres: 
+                @foreach(string genre in product.Genres)
+                {
+                    @string.Concat(genre + " ");
+                }
+            </p>
+            <p>Price: @product.Price</p>
+            <p>Quantity: @product.QuantityInOrder</p>
+
+            <a class="btn btn-primary" title="Add book into Order" href=@Url.ActionLink("AddToOrder", "Home", new {@product.Id})>+</a>
+            <a class="btn btn-primary" title="Remove book from Order" href=@Url.ActionLink("DeleteFromOrder", "Home", new {@product.Id})>-</a>
+            <a class="btn btn-primary" title="More Details" href=@Url.ActionLink("Details", "Home", new {@product.Id})>Details</a>
+        }
+
+    }
+    else
+    {
+        <p>Order is empty. Add some products</p>
+    }
+    @if (!string.IsNullOrEmpty(Model.OrderViewModel.Order.Notes))
+    {
+        <p>Additional data about your Order:</p>
+        <p>@Model.OrderViewModel.Order.Notes</p>
+    }
+    <br />
+    <a class="btn btn-primary" title="Add Books to Order" href=@Url.ActionLink("Shop", "Home")>Add More</a>
+    <a class="btn btn-primary" title="Return back to previous page" href="javascript:void(0);" onclick="history.go(-1);">Go Back</a>
+</form>
