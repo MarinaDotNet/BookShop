@@ -9,10 +9,17 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Identity.Client;
+using NuGet.Packaging;
+using NuGet.Protocol;
+using NuGet.Versioning;
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Diagnostics;
+using System.Linq.Expressions;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace BookShop.WebApplication.Controllers
 {
@@ -59,10 +66,11 @@ namespace BookShop.WebApplication.Controllers
 
                 return _viewModel.ProductViewModel.Products.Any() ?
                     View(_viewModel) :
-                    Error();
+                    throw new Exception();
             }
-            catch
+            catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 return Error();
             }
 
@@ -88,22 +96,20 @@ namespace BookShop.WebApplication.Controllers
             {
                 if (id is not null)
                 {
-                    var queryData = new Dictionary<string, string> { ["id"] = id };
+                    ProductViewModel productViewModel = new()
+                    {
+                        Product = _httpClient.GetFromJsonAsync<Product>(UriForQueryProductById(id)).Result!
+                    };
 
-                    Uri url = new(QueryHelpers.AddQueryString(new UrlStockRoute().GetProductById.ToString(), queryData!));
-
-                    ProductViewModel productViewModel = new();
-                    productViewModel.Product = _httpClient.GetFromJsonAsync<Product>(url).Result!;
-
-                    return productViewModel.Product is null ? Error() : View(productViewModel);
+                    return productViewModel.Product is null ? 
+                        throw new Exception() : 
+                        View(productViewModel);
                 }
-                else
-                {
-                    return Error();
-                }
+                else throw new Exception();
             }
-            catch
+            catch(Exception error)
             {
+                Console.WriteLine(error.Message);
                 return Error();
             }
         }
@@ -112,6 +118,45 @@ namespace BookShop.WebApplication.Controllers
         public IActionResult AddToOrder(string id)
         {
             return View();
+        }
+
+        [Authorize]
+        public IActionResult Order()
+        {
+            try
+            {
+                //Checks if there any unsubmitted orders
+                //else creates new
+                if (_httpClient.GetFromJsonAsync<bool>(new UrlOrderRoute().IsAnyUnsubmitted).Result!)
+                {
+                    OrderViewModel order = new()
+                    {
+                        Order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!
+                    };
+
+                    OrderViewModel toReturnModel = CheckOrderData(order);
+                    _viewModel.OrderViewModel = toReturnModel;
+                }
+                else
+                {
+                    var newData = _httpClient.PostAsJsonAsync<string>(new UrlOrderRoute().PostNewOrder, "").Result!;
+                    if (newData.StatusCode == HttpStatusCode.OK)
+                    {
+                        OrderViewModel order = new()
+                        {
+                            Order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!
+                        };
+                        _viewModel.OrderViewModel = order;
+                    }
+                    else throw new Exception();
+                }
+                return View(_viewModel);
+            }
+            catch (Exception error) 
+            {
+                Console.WriteLine(error.Message);
+                return Error();
+            }
         }
 
         [Authorize]
@@ -219,7 +264,6 @@ namespace BookShop.WebApplication.Controllers
             }
         }
 
-
         [Authorize]
         public IActionResult Search(string search, int page, bool isAcsending, int quantity)
         {
@@ -293,6 +337,95 @@ namespace BookShop.WebApplication.Controllers
             {
                 _logger.LogError(ex, message: ex.Message, ex.StackTrace);
                 return [];
+            }
+        }
+
+        private Uri UriForQueryProductById(string id)
+        {
+            var queryData = new Dictionary<string, string> { ["id"] = id };
+
+            return new(QueryHelpers.AddQueryString(new UrlStockRoute().GetProductById.ToString(), queryData!));
+        }
+
+        private Order RemoveProductsFromOrder(string orderId, List<string> productsId)
+        {
+            try
+            {
+                if(string.IsNullOrEmpty(orderId) || productsId.Count > 1)
+                {
+                    throw new Exception("Order was not found or problem with product/products with requested Ids");
+                }
+
+                var result = _httpClient.PutAsJsonAsync<string>(new UrlOrderRoute().DeleteProductsFromOrder(productsId, orderId), "").Result;
+                
+                var updated = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result;
+                return updated is not null ? updated : new Order();
+                
+            }
+            catch(Exception error)
+            {
+                Console.WriteLine(error.Message);
+                Order newOrder = new()
+                {
+                    Notes = "Impossible to load requested order. Please contact to the Support."
+                };
+                return newOrder;
+            }
+        }
+        //Checks and Fixes if in order any currently unavalable products
+        private OrderViewModel CheckOrderData(OrderViewModel order)
+        {
+            try
+            {
+                if (order is null)
+                {
+                    throw new Exception();
+                }
+                if (order.Order.ProductsId is not null)
+                {
+                    //list to hold products from order that is still available
+                    List<Product> productsAdd = [];
+                    //list to hold products from order that is currently not available
+                    List<string> toRemove = [];
+                    foreach (string id in order.Order.ProductsId)
+                    {
+                        var res = _httpClient.GetAsync(UriForQueryProductById(id)).Result.StatusCode;
+                        if (res.Equals(HttpStatusCode.OK))
+                        {
+                            productsAdd.Add(_httpClient.GetFromJsonAsync<Product>(UriForQueryProductById(id)).Result!);
+                        }
+                        else
+                        {
+                            toRemove.Add(id);
+                        }
+                    }
+                    if (toRemove.Count > 0)
+                    {
+                        order.Order = RemoveProductsFromOrder(order.Order.OrderId!, toRemove);
+
+                        string note = "Some products from your order currently not available.\t" +
+                                "Some products was removed from your order. \t" +
+                                "Products with id's: \t";
+
+                        foreach(string id in toRemove)
+                        {
+                            note += id + "\t";
+                        }
+                        order.Order.Notes = note;
+                    }
+                    if (productsAdd is not null)
+                    {
+                        order.Order.Products = productsAdd;
+                    }
+                }
+                return order;
+            }
+            catch(Exception error)
+            {
+                Console.WriteLine(error.ToString());
+                OrderViewModel newOrder = new();
+                newOrder.Order.Notes = "Impossible to load requested order. Please contact to the Support.";
+                return newOrder;
             }
         }
         #endregion
