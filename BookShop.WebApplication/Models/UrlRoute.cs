@@ -103,6 +103,27 @@ namespace BookShop.WebApplication.Models
     public class UrlOrderRoute
 
     {
+        public Uri GetAllOrders { get; } = new Uri("https://localhost:7257/order/all");
 
+        //Url to the current unsubmitted yet order for signed in user
+        public Uri GetCurrentOrder { get; } = new Uri("https://localhost:7257/order/current");
+        //Url to check if currently signed in user has or not unsubmitted orders
+        public Uri IsAnyUnsubmitted { get; } = new Uri("https://localhost:7257/order/is-any");
+        
+        public Uri PostNewOrder { get; set; } = new Uri("https://localhost:7257/order");
+
+        public Uri DeleteProductsFromOrder(List<string>productsIds, string orderId)
+        {
+            string link = "https://localhost:7257/order/products/delete?";
+            if(productsIds.Count > 0)
+            {
+                foreach(string productId in productsIds)
+                {
+                    link += "productIds=" + productId + "&";
+                }
+            }
+            link += "orderId=" + orderId;
+            return new Uri(link); 
+        }
     }
 }
