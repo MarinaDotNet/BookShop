@@ -121,7 +121,32 @@ namespace BookShop.WebApplication.Controllers
         [Authorize]
         public IActionResult AddToOrder(string id)
         {
-            return View();
+            try
+            {
+                if(string.IsNullOrEmpty(id))
+                {
+                    throw new ArgumentNullException("id");
+                }
+
+                Order orderCashe = (Order)_orderCache.Get("orderLast")!;
+
+                if(orderCashe is null)
+                {
+                    orderCashe = GetLastOrder()!;
+                    ManageOrderCashe(orderCashe);
+                }
+
+                var result = _httpClient.PutAsJsonAsync<Order>(new UrlOrderRoute().AddProductsToOrder([id], orderCashe.OrderId!), orderCashe).Result;
+
+                return result.StatusCode == HttpStatusCode.OK ? 
+                    RedirectToAction("Order") : 
+                    throw new Exception();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.Message);  
+                return Error();
+            }
         }
 
         [Authorize]
@@ -467,7 +492,9 @@ namespace BookShop.WebApplication.Controllers
             try
             {
                 Order orderLast = (Order)_orderCache.Get("orderLast")!;
-                if (orderLast is null || !orderLast.OrderId!.Equals(_viewModel.OrderViewModel.Order.OrderId))
+                if (orderLast is null || 
+                    string.IsNullOrEmpty(orderLast.OrderId) || 
+                    !orderLast.OrderId!.Equals(_viewModel.OrderViewModel.Order.OrderId))
                 {
                     orderLast = _orderCache.Set("orderLast", _viewModel.OrderViewModel.Order);
                 }
