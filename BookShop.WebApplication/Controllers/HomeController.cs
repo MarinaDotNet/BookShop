@@ -343,6 +343,36 @@ namespace BookShop.WebApplication.Controllers
             }
         }
 
+        [Authorize]
+        public IActionResult DeleteFromOrder(string id)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(id))
+                {
+                    throw new Exception();
+                }
+
+                Order orderCashe = (Order)_orderCache.Get("orderLast")!;
+
+                if (orderCashe is null)
+                {
+                    orderCashe = GetLastOrder()!;
+                    ManageOrderCashe(orderCashe);
+                }
+
+                var result = _httpClient.PutAsJsonAsync<Order>(new UrlOrderRoute().DeleteProductsFromOrder([id], orderCashe.OrderId!), orderCashe).Result;
+
+                return result.StatusCode == HttpStatusCode.OK ?
+                    RedirectToAction("Order") :
+                    throw new Exception();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                return Error();
+            }
+        }
         #region of Help Methods for Controller
         //Returns list of genres in Ascending order and all records converted to lowercase
         private List<string> GetListGenres(Uri url)
