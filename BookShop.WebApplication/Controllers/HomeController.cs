@@ -27,12 +27,14 @@ namespace BookShop.WebApplication.Controllers
     {
         private readonly ILogger<HomeController> _logger;
         private IMemoryCache _tokenCache;
+        private IMemoryCache _orderCache;
         private readonly HttpClient _httpClient = new();
         private readonly IConfiguration _configuration;
         private ViewModel _viewModel = new();
         public HomeController(ILogger<HomeController> logger, 
             IMemoryCache tokenCache,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IMemoryCache orderCache)
         {
             _logger = logger;
             _tokenCache = tokenCache;
@@ -51,6 +53,8 @@ namespace BookShop.WebApplication.Controllers
             {
                 _httpClient.DefaultRequestHeaders.Add(ApplicationConstants.ApiVersionHeader, "3");
             }
+
+            _orderCache = orderCache;
         }
 
         public IActionResult Index()
@@ -125,31 +129,19 @@ namespace BookShop.WebApplication.Controllers
         {
             try
             {
-                //Checks if there any unsubmitted orders
-                //else creates new
-                if (_httpClient.GetFromJsonAsync<bool>(new UrlOrderRoute().IsAnyUnsubmitted).Result!)
+                //getting data about current unsubmitted order
+                OrderViewModel current = new()
                 {
-                    OrderViewModel order = new()
-                    {
-                        Order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!
-                    };
+                    Order = GetLastOrder()!
+                };
 
-                    OrderViewModel toReturnModel = CheckOrderData(order);
-                    _viewModel.OrderViewModel = toReturnModel;
-                }
-                else
-                {
-                    var newData = _httpClient.PostAsJsonAsync<string>(new UrlOrderRoute().PostNewOrder, "").Result!;
-                    if (newData.StatusCode == HttpStatusCode.OK)
-                    {
-                        OrderViewModel order = new()
-                        {
-                            Order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!
-                        };
-                        _viewModel.OrderViewModel = order;
-                    }
-                    else throw new Exception();
-                }
+                //calls method to check and fix if any order data was changed since it last viewed by user
+                OrderViewModel order = CheckOrderData(current);
+                _viewModel.OrderViewModel = order;
+
+                //updating the cache if in needs
+                ManageOrderCashe(order.Order);
+
                 return View(_viewModel);
             }
             catch (Exception error) 
@@ -427,6 +419,64 @@ namespace BookShop.WebApplication.Controllers
                 newOrder.Order.Notes = "Impossible to load requested order. Please contact to the Support.";
                 return newOrder;
             }
+        }
+
+        /**
+         * returns existing unsubmitted Order or creates new Order if there is none and returns it
+         * 
+         * @return Order order or
+         * @return null;
+         * @throw ArgumentNullException() 
+         */
+        private Order? GetLastOrder()
+        {
+            try
+            {
+                Order? order = new();
+
+                if (_httpClient.GetFromJsonAsync<bool>(new UrlOrderRoute().IsAnyUnsubmitted).Result!)
+                {
+                   order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!;
+                }
+                else
+                {
+                    var newData = _httpClient.PostAsJsonAsync<string>(new UrlOrderRoute().PostNewOrder, "").Result!;
+                    if (newData.StatusCode == HttpStatusCode.OK)
+                    {
+                        order = _httpClient.GetFromJsonAsync<Order>(new UrlOrderRoute().GetCurrentOrder).Result!;
+                    }
+                    else throw new Exception(newData.ReasonPhrase);
+                }
+                return string.IsNullOrEmpty(order.OrderId) ? throw new ArgumentNullException() : order;
+            }
+            catch(Exception error)
+            {
+                Console.WriteLine(error.ToString());
+                return null;
+            }
+        }
+
+        /**
+         * Updates value for key "orderLast" in _orderCashe
+         * 
+         * "orderLast" key holds the value of current unsubmitted yet Order
+         * 
+         */
+        private void ManageOrderCashe(Order order)
+        {
+            try
+            {
+                Order orderLast = (Order)_orderCache.Get("orderLast")!;
+                if (orderLast is null || !orderLast.OrderId!.Equals(_viewModel.OrderViewModel.Order.OrderId))
+                {
+                    orderLast = _orderCache.Set("orderLast", _viewModel.OrderViewModel.Order);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            
         }
         #endregion
     }
