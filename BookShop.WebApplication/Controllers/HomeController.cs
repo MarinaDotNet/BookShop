@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Identity.Client;
 using NuGet.Packaging;
@@ -125,7 +126,7 @@ namespace BookShop.WebApplication.Controllers
             {
                 if(string.IsNullOrEmpty(id))
                 {
-                    throw new ArgumentNullException("id");
+                    throw new Exception();
                 }
 
                 Order orderCashe = (Order)_orderCache.Get("orderLast")!;
@@ -162,6 +163,13 @@ namespace BookShop.WebApplication.Controllers
 
                 //calls method to check and fix if any order data was changed since it last viewed by user
                 OrderViewModel order = CheckOrderData(current);
+
+                //ensure that there nor dublicates in list of OrderViewModel.Order.Products
+                if(order.Order.Products!.Count() > 1)
+                {
+                    order.Order.Products = ManageDublicateProducts(order.Order.Products!.ToList());
+                }
+
                 _viewModel.OrderViewModel = order;
 
                 //updating the cache if in needs
@@ -504,6 +512,44 @@ namespace BookShop.WebApplication.Controllers
                 Console.WriteLine(ex.ToString());
             }
             
+        }
+
+        /**
+         * Ensure that there nor dublicates in list of Product
+         * For each dublicate the parameter Product.QuantityInOrder should be incremented
+         * 
+         * @List<Product> entryData
+         * @returns List<Product> returnData
+         * @throws Exception()
+         */
+        private List<Product> ManageDublicateProducts(List<Product> entryData)
+        {
+            try
+            {
+                List<Product> returnData = [];
+                if(entryData.Count > 0)
+                {
+                    foreach (Product product in entryData)
+                    {
+                        if (returnData.Where(_ => _.Id!.Equals(product.Id)).Count() == 1)
+                        {
+                            int index = returnData.IndexOf(returnData.Where(_ => _.Id!.Equals(product.Id)).FirstOrDefault()!);
+                            returnData.ElementAt(index).QuantityInOrder += 1;
+                        }
+                        else
+                        {
+                            returnData.Add(product);
+                        }
+                    }
+                    return returnData.Count > 0 ? returnData : throw new Exception();
+                }
+                throw new Exception();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return [];
+            }
         }
         #endregion
     }
