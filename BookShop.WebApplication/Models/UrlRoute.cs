@@ -140,7 +140,7 @@ namespace BookShop.WebApplication.Models
             {
                 productsIds.ForEach(id => link += "productsIds=" + id + "&");
             }
-            link += "orderId" + orderId;
+            link += "orderId=" + orderId;
             return new Uri(link);
         }
     }
