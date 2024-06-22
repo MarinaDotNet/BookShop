@@ -125,5 +125,23 @@ namespace BookShop.WebApplication.Models
             link += "orderId=" + orderId;
             return new Uri(link); 
         }
+
+        /**
+         * Generates and returns Uri for adding products into Order object where Order.OrderId == orderId
+         * 
+         * @List<string> productsIds - products ids to add into Order object
+         * @string orderId - id of Order object
+         * @returns Uri
+         */
+        public Uri AddProductsToOrder(List<string>productsIds, string orderId)
+        {
+            string link = "https://localhost:7257/order/products/add?";
+            if(productsIds.Count > 0)
+            {
+                productsIds.ForEach(id => link += "productsIds=" + id + "&");
+            }
+            link += "orderId" + orderId;
+            return new Uri(link);
+        }
     }
 }
