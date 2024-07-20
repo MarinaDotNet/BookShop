@@ -964,8 +964,8 @@ namespace BookShop.API.Controllers
                         if (order.ProductsId!.Count != 0)
                         {
                             string idsDeleted = "";
-                            List<string> productsIds = order.ProductsId!.ToList();
-                            List<string> productsIdNotAvailable = new();
+                            List<string> productsIds = [.. order.ProductsId!];
+                            List<string> productsIdNotAvailable = [];
                             foreach (string productId in productsIds)
                             {
                                 Product product = await _stockServices.GetBookByIdAsync(productId);

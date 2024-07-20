@@ -17,7 +17,7 @@ namespace BookShop.API.Models
         public string OrderId { get; set; } = string.Empty!;
 
         public ApiUser User { get; set; } = new();
-        public List<string>? ProductsId { get; set; } = new();
+        public List<string>? ProductsId { get; set; } = [];
 
         [Precision(18, 2)]
         public decimal TotalPrice { get; set; }
