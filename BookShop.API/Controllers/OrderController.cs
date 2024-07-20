@@ -69,7 +69,7 @@ namespace BookShop.API.Controllers
         private string MessageUnavailableProducts(List<string> productsIdsNotFound, bool orderIsSubmitted)
         {
             string message = "";
-            if (productsIdsNotFound.Any())
+            if (productsIdsNotFound.Count != 0)
             {
                 message += "Some product from your order, currently unavailable in stock.";
                 message += orderIsSubmitted ?
@@ -193,7 +193,7 @@ namespace BookShop.API.Controllers
                                 productsNotAvailable.Add(id);
                             }
                         }
-                        if (productsNotAvailable.Any())
+                        if (productsNotAvailable.Count != 0)
                         {
                             message += MessageUnavailableProducts(productsNotAvailable, order.SubmittedOrder);
 
@@ -350,7 +350,7 @@ namespace BookShop.API.Controllers
                     if (order is not null && !order.SubmittedOrder)
                     {
                         //Checks if all products in order exists and available
-                        if(order.ProductsId!.Any())
+                        if (order.ProductsId!.Count != 0)
                         {
                             string idsDeleted = "";
                             List<string> productsIds = [.. order.ProductsId!];
@@ -366,7 +366,7 @@ namespace BookShop.API.Controllers
                                 }
                             }
                             //Recounts total price for order if there was removed any not in stock products
-                            if(productsIdNotAvailable.Any())
+                            if (productsIdNotAvailable.Count != 0)
                             {
                                 decimal totalPrice = 0;
                                 foreach (string producId in productsIds)
@@ -377,7 +377,7 @@ namespace BookShop.API.Controllers
                                 order.TotalPrice = totalPrice;
                             }
                             //Resetting order 
-                            order.SubmittedOrder = !productsIdNotAvailable.Any();
+                            order.SubmittedOrder = productsIdNotAvailable.Count == 0;
                             order.OrderDateTime = DateTime.Now;
                             _dbContext.Orders.Update(order);
 
@@ -482,7 +482,7 @@ namespace BookShop.API.Controllers
                         }
                         //if in current order.ProductsId any unavailable products and order not submitted yet,
                         //recounts total price and updates order.ProductsId
-                        if (productNotAvailable.Any() && !order.SubmittedOrder)
+                        if (productNotAvailable.Count != 0 && !order.SubmittedOrder)
                         {
                             decimal priceUpdate = 0;
                             order.ProductsId.Clear();
@@ -539,7 +539,7 @@ namespace BookShop.API.Controllers
 
                     orders?.ForEach(order => model.Add(new(order, "")));
 
-                    return model.Any() ? Successfull(model) :
+                    return model.Count != 0 ? Successfull(model) :
                         Warning("There nor orders found for current user.", (int)HttpStatusCode.NoContent);
                 }
                 else
@@ -700,7 +700,7 @@ namespace BookShop.API.Controllers
         private string MessageUnavailableProducts(List<string> productsIdsNotFound, bool orderIsSubmitted)
         {
             string message = "";
-            if (productsIdsNotFound.Any())
+            if (productsIdsNotFound.Count != 0)
             {
                 message += "Some product from your order, currently unavailable in stock.";
                 message += orderIsSubmitted ?
@@ -821,7 +821,7 @@ namespace BookShop.API.Controllers
                                 productsNotAvailable.Add(id);
                             }
                         }
-                        if (productsNotAvailable.Any())
+                        if (productsNotAvailable.Count != 0)
                         {
                             message += MessageUnavailableProducts(productsNotAvailable, order.SubmittedOrder);
 
@@ -961,7 +961,7 @@ namespace BookShop.API.Controllers
                     if (order?.SubmittedOrder == false)
                     {
                         //Checks if all products in order exists and available
-                        if (order.ProductsId!.Any())
+                        if (order.ProductsId!.Count != 0)
                         {
                             string idsDeleted = "";
                             List<string> productsIds = order.ProductsId!.ToList();
@@ -977,7 +977,7 @@ namespace BookShop.API.Controllers
                                 }
                             }
                             //Recounts total price for order if there was removed any not in stock products
-                            if (productsIdNotAvailable.Any())
+                            if (productsIdNotAvailable.Count != 0)
                             {
                                 decimal totalPrice = 0;
                                 foreach (string producId in productsIds)
@@ -989,7 +989,7 @@ namespace BookShop.API.Controllers
                                 order.TotalPrice = totalPrice;
                             }
                             //Resetting order 
-                            order.SubmittedOrder = !productsIdNotAvailable.Any();
+                            order.SubmittedOrder = productsIdNotAvailable.Count == 0;
                             order.OrderDateTime = DateTime.Now;
                             _dbContext.Orders.Update(order);
 
@@ -1075,7 +1075,7 @@ namespace BookShop.API.Controllers
                         }
                         //if in current order.ProductsId any unavailable products and order not submitted yet,
                         //recounts total price and updates order.ProductsId
-                        if (productNotAvailable.Any() && !order.SubmittedOrder)
+                        if (productNotAvailable.Count != 0 && !order.SubmittedOrder)
                         {
                             decimal priceUpdate = 0;
                             order.ProductsId.Clear();
@@ -1132,7 +1132,7 @@ namespace BookShop.API.Controllers
 
                     orders?.ForEach(order => model.Add(new(order, "")));
 
-                    return model.Any() ? Successfull(model) :
+                    return model.Count != 0 ? Successfull(model) :
                         Warning("There nor orders found for current user", (int)HttpStatusCode.NoContent);
                 }
                 else

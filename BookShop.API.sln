@@ -5,7 +5,7 @@ VisualStudioVersion = 17.9.34723.18
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookShop.API", "BookShop.API\BookShop.API.csproj", "{0E5B0CD2-D7C6-4562-9C14-0F6D43766653}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BookShop.WebApplication", "BookShop.WebApplication\BookShop.WebApplication.csproj", "{0E94405B-D13E-4174-8515-A6FB4DA3E787}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BookShop.WebApplication", "BookShop.WebApplication\BookShop.WebApplication.csproj", "{0E94405B-D13E-4174-8515-A6FB4DA3E787}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

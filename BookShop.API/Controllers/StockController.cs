@@ -93,7 +93,7 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable == isAvailable).ToList();
-                return products.Any() ? Ok(products) : NotFound("Nor data under requested conditions to display");
+                return products.Count != 0 ? Ok(products) : NotFound("Nor data under requested conditions to display");
             }
             catch(Exception ex)
             {
@@ -115,7 +115,7 @@ namespace BookShop.API.Controllers
                 var products = (await _services.GetAllBooksAsync()).Where(_ => _.IsAvailable == isAvailable);
                 List<Product> result = OrderBy(model, [..products]);
                 
-                if(result.Any())
+                if(result.Count != 0)
                 {
                     result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
                     return Ok(result);
@@ -136,18 +136,18 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = await _services.GetAllBooksAsync();
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<string> genres = [];
 
                     foreach(var product in products)
                     {
-                        if(product.Genres.Any())
+                        if (product.Genres.Length != 0)
                         { 
                             genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
                         }                      
                     }
-                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                    return genres.Count != 0 ? Ok(genres) : NotFound("No record found");
                 }
                 else return NotFound("No record found");
             }
@@ -169,7 +169,7 @@ namespace BookShop.API.Controllers
                 var products = (await _services.GetAllBooksAsync()).Where(_ => _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase));
 
                 List<Product> result = OrderBy(model, [.. products]);
-                return result.Any() ?
+                return result.Count != 0 ?
                      Ok(result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                      NotFound("No record found under requsted condition");
                 
@@ -192,7 +192,7 @@ namespace BookShop.API.Controllers
 
                 Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
 
-                return products.Any() ?
+                return products.Count != 0 ?
                     Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                     NotFound("There nor records found under requested condition");
             }
@@ -212,7 +212,7 @@ namespace BookShop.API.Controllers
 
                 Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
 
-                return products.Any() ?
+                return products.Count != 0 ?
                     Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                     NotFound("There nor records found under requested condition");
             }
@@ -234,13 +234,13 @@ namespace BookShop.API.Controllers
                 var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
                 List<Product> result = ApplyFilters(products, filter);
                 result = OrderBy(model, result);
-                if(result.Any())
+                if (result.Count != 0)
                 {
                     Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
                     result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
                 }
                 
-                return result.Any() ? 
+                return result.Count != 0 ? 
                         Ok(result) : 
                         NotFound("Nor records found under requested condition");
             }
@@ -377,7 +377,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if(products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> filtered = [.. products];
 
@@ -423,7 +423,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if(products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> result = [];
                     if (model.InAscendingOrder)
@@ -509,7 +509,7 @@ namespace BookShop.API.Controllers
             try 
             {
                 var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
-                if(products.Any())
+                if (products.Count != 0)
                 {
                     Query query = new(model.RequestedPage, model.QuantityPerPage, ApplyFilters(products, filter).Count);
                     return Ok(query);
@@ -631,18 +631,18 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = await _services.GetAllBooksAsync();
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<string> genres = [];
 
                     foreach (var product in products)
                     {
-                        if (product.Genres.Any() && product.IsAvailable)
+                        if (product.Genres.Length != 0 && product.IsAvailable)
                         {
                             genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
                         }
                     }
-                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                    return genres.Count != 0 ? Ok(genres) : NotFound("No record found");
                 }
                 else return NotFound("No record found");
             }
@@ -666,7 +666,7 @@ namespace BookShop.API.Controllers
                 _.Genres.Contains(genre, StringComparer.OrdinalIgnoreCase));
 
                 List<Product> result = OrderBy(model, [.. products]);
-                return result.Any() ?
+                return result.Count != 0 ?
                      Ok(result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                      NotFound("No record found under requsted condition");
 
@@ -690,7 +690,7 @@ namespace BookShop.API.Controllers
 
                 Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
 
-                return products.Any() ?
+                return products.Count != 0 ?
                     Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                     NotFound("There nor records found under requested condition");
             }
@@ -711,7 +711,7 @@ namespace BookShop.API.Controllers
 
                 Query query = new(model.RequestedPage, model.QuantityPerPage, products.Count);
 
-                return products.Any() ?
+                return products.Count != 0 ?
                     Ok(products.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)) :
                     NotFound("There nor records found under requested condition");
             }
@@ -733,13 +733,13 @@ namespace BookShop.API.Controllers
                 var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
                 List<Product> result = ApplyFilters(products, filter);
                 result = OrderBy(model, result);
-                if (result.Any())
+                if (result.Count != 0)
                 {
                     Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
                     result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
                 }
 
-                return result.Any() ?
+                return result.Count != 0 ?
                         Ok(result) :
                         NotFound("Nor records found under requested condition");
             }
@@ -780,7 +780,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> filtered = [.. products];
 
@@ -874,7 +874,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> result = [];
                     if (model.InAscendingOrder)
@@ -912,7 +912,7 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = (await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy)).Where(_ => _.IsAvailable).ToList();
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     Query query = new(model.RequestedPage, model.QuantityPerPage, ApplyFilters(products, filter).Count);
                     return Ok(query);
@@ -947,18 +947,18 @@ namespace BookShop.API.Controllers
             try
             {
                 var products = await _services.GetAllBooksAsync();
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<string> genres = [];
 
                     foreach (var product in products)
                     {
-                        if (product.Genres.Any() && product.IsAvailable)
+                        if (product.Genres.Length != 0 && product.IsAvailable)
                         {
                             genres.AddRange(product.Genres.Where(g => !genres.Any(_ => _.Trim().Equals(g.Trim(), StringComparison.OrdinalIgnoreCase))));
                         }
                     }
-                    return genres.Any() ? Ok(genres) : NotFound("No record found");
+                    return genres.Count != 0 ? Ok(genres) : NotFound("No record found");
                 }
                 else return NotFound("No record found");
             }
@@ -980,13 +980,13 @@ namespace BookShop.API.Controllers
                 var products = await _services.GetBooksInOrder(model.InAscendingOrder, model.OrderBy);
                 List<Product> result = ApplyFilters(products, filter);
                 result = OrderBy(model, result);
-                if (result.Any())
+                if (result.Count != 0)
                 {
                     Query query = new(model.RequestedPage, model.QuantityPerPage, result.Count);
                     result = [.. result.Skip(query.QuantityToSkip).Take(query.RequestedQuantity)];
                 }
 
-                return result.Any() ?
+                return result.Count != 0 ?
                         Ok(result) :
                         NotFound("Nor records found under requested condition");
             }
@@ -1042,7 +1042,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> filtered = [.. products];
 
@@ -1087,7 +1087,7 @@ namespace BookShop.API.Controllers
         {
             try
             {
-                if (products.Any())
+                if (products.Count != 0)
                 {
                     List<Product> result = [];
                     if (model.InAscendingOrder)
