@@ -154,7 +154,7 @@ namespace BookShop.API.Controllers
                 {
                     loging = user.UserName,
                     email = user.Email,
-                    roles = roles,
+                    roles,
                     message = "Registrated Successfully"
                 });
             }
@@ -483,7 +483,7 @@ namespace BookShop.API.Controllers
                 {
                     loging = user.UserName,
                     email = user.Email,
-                    roles = roles,
+                    roles,
                     message = "Registrated Successfully"
                 });
             }
